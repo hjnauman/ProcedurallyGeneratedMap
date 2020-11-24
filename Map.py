@@ -16,7 +16,6 @@ class Cell():
         self.y = y
         self.size= size
         self.cellType= cellType
-        self.infected= False
 
     def getCellColor(self):
 
@@ -25,7 +24,7 @@ class Cell():
         if self.cellType == cellType.LAND:
             color = 'green'
         elif self.cellType == cellType.WATER:
-            color = 'black'
+            color = 'blue'
         elif self.cellType == cellType.WATER_START:
             color = 'blue'
 
@@ -42,7 +41,7 @@ class Cell():
             color = self.getCellColor()
 
             # self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = fill, outline = outline)
-            self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = color, outline = 'black')
+            self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = color, width = 0)
 
 class CellGrid(Canvas):
     def __init__(self,master, rowNumber, columnNumber, cellSize, landPercent, *args, **kwargs):
@@ -51,13 +50,12 @@ class CellGrid(Canvas):
         self.cellSize = cellSize
 
         self.grid = []
-        for row in range(0, rowNumber):
+        for column in range(columnNumber):
 
             line = []
-            for column in range(0, columnNumber):
+            for row in range(rowNumber):
                 cellType = self.chooseCellType(landPercent)
                 line.append(Cell(self, column, row, cellSize, cellType))
-
             self.grid.append(line)
 
         self.createWater()
@@ -74,7 +72,7 @@ class CellGrid(Canvas):
 
         Params
         --------
-        landPercent - A float value between 0 and 100 that represents the percentage of land you would like on the map
+        landPercent - A float value between 0.00 and 100.00 that represents the percentage of land you would like on the map
         """
         percent = landPercent * 10 * 10
         if randint(0, 9999) < percent:
@@ -83,22 +81,10 @@ class CellGrid(Canvas):
             return cellType.WATER_START
 
     def createWater(self):
-        for i in self.grid:
-            for j in i:
-                if j.cellType == cellType.WATER_START:
-                    self.infectCells(55, j.x, j.y, cellType.WATER)
-        # waterStartRemaining = True
-        # while waterStartRemaining:
-        #     waterStartRemaining = False
-        #     for i in self.grid:
-        #         for j in i:
-        #             if j.cellType == cellType.WATER_START:
-        #                 # j.cellType = cellType.WATER
-        #                 self.infectCells(80, j.x, j.y, cellType.WATER)
-        #     for i in self.grid:
-        #         for j in i:
-        #             if j.cellType == cellType.WATER_START:
-        #                 waterStartRemaining = True
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.WATER_START:
+                    self.infectCells(54, cell.x, cell.y, cellType.WATER)
 
     def infectCells(self, infectionRate, x, y, cellTypeIn):
         self.infectCell(infectionRate, x, y-1,cellTypeIn) # UP
@@ -107,28 +93,27 @@ class CellGrid(Canvas):
         self.infectCell(infectionRate, x+1, y,cellTypeIn) # RIGHT
     
     def infectCell(self, infectionRate, x, y, cellTypeIn):
-        if y < numColumns -1 and y > 0 and x < numRows -1 and x > 0:
+        if y < numRows -1 and y > 0 and x < numColumns -1 and x > 0:
             randValue = randint(0,99)
             if randValue < infectionRate and self.grid[x][y].cellType != cellTypeIn and self.grid[x][y].cellType != cellType.WATER_START:
                 self.grid[x][y].cellType = cellTypeIn
                 self.infectCells(infectionRate - 1, x, y, cellTypeIn)
 
     def draw(self):
-        for row in self.grid:
-            for cell in row:
+        for column in self.grid:
+            for cell in column:
                 cell.draw()
 
 
-pixelsPerCell = 40
-# xCells = int(1280 / pixelLength)
-# yCells = int(1920/ pixelLength)
-numRows = 3
-numColumns = 5
+pixelsPerCell = 5
+numColumns = int(1890/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
+numRows = int(1000/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
+
 
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, 92)
+    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, 99.00)
     grid.pack()
 
     app.mainloop()
