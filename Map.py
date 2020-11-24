@@ -60,7 +60,7 @@ class Cell():
             self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = color, width = 0)
 
 class CellGrid(Canvas):
-    def __init__(self,master, rowNumber, columnNumber, cellSize, landPercent, *args, **kwargs):
+    def __init__(self,master, rowNumber, columnNumber, cellSize, landPercent, infectionRate, *args, **kwargs):
         Canvas.__init__(self, master, width = cellSize * columnNumber , height = cellSize * rowNumber, *args, **kwargs)
         
         self.cellSize = cellSize
@@ -74,7 +74,7 @@ class CellGrid(Canvas):
                 line.append(Cell(self, column, row, cellSize, cellType))
             self.grid.append(line)
 
-        self.createWater()
+        self.createWater(infectionRate)
 
         self.draw()
 
@@ -100,7 +100,7 @@ class CellGrid(Canvas):
             else:
                 return cellType.RIVER_HEAD
 
-    def createWater(self):
+    def createWater(self, infectionRate):
         """
         Description
         -------------
@@ -111,90 +111,35 @@ class CellGrid(Canvas):
             for cell in column:
                 if cell.cellType == cellType.WATER_START:
                     cell.cellType = cellType.WATER
-                    self.infectCells(48, cell.x, cell.y, cellType.WATER)
+                    self.infectCells(infectionRate, cell.x, cell.y, cellType.WATER)
                 elif cell.cellType == cellType.RIVER_HEAD:
-                    cell.cellType = cellType.WATER
+                    # cell.cellType = cellType.WATER
                     self.createRiver()
 
         # Fill in single-cells of land
-        for i in range(0,10):
-            for column in self.grid:
-                for cell in column:
-                    if cell.cellType == cellType.LAND:
-                        waterCount = 0
-                        surroundingCells = self.getSurroundingCells(cell.x, cell.y, 1)
-                        for i in surroundingCells:
-                            if i == cellType.WATER:
-                                waterCount += 1
-                        #if waterCount == 8: # fully surrounded by water
-                        if waterCount > 4: # TEST to fill corners also
-                            cell.cellType = cellType.WATER    
+        self.generateCells(1, 4, '>', cellType.LAND, (cellType.WATER,), cellType.WATER)
 
         # Fill in single-cells of water
-        for i in range(0,1):
-            for column in self.grid:
-                for cell in column:
-                    if cell.cellType == cellType.WATER:
-                        waterCount = 0
-                        surroundingCells = self.getSurroundingCells(cell.x, cell.y, 1)
-                        for i in surroundingCells:
-                            if i == cellType.WATER:
-                                waterCount += 1
-                        #if waterCount == 8: # fully surrounded by water
-                        if waterCount < 2: # TEST to fill corners also
-                            cell.cellType = cellType.LAND 
-                            
+        self.generateCells(1, 2, '<', cellType.WATER, (cellType.WATER,), cellType.LAND)
+
         # Generate deep water 0
-        for column in self.grid:
-            for cell in column:
-                if cell.cellType == cellType.WATER:
-                    waterCount = 0
-                    rad = 1
-                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
-                    for i in surroundingCells:
-                        if i == cellType.WATER or i == cellType.DEEP_WATER0:
-                            waterCount += 1
-                    if waterCount == rad*8: # TEST to fill corners also
-                        cell.cellType = cellType.DEEP_WATER0
+        rad0 = 2
+        self.generateCells(rad0, rad0*8, '=', cellType.WATER, (cellType.WATER,cellType.DEEP_WATER0), cellType.DEEP_WATER0)
 
         # Generate deep water 1
-        for column in self.grid:
-            for cell in column:
-                if cell.cellType == cellType.DEEP_WATER0:
-                    waterCount = 0
-                    rad = 3
-                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
-                    for i in surroundingCells:
-                        if i == cellType.WATER or i == cellType.DEEP_WATER0  or i == cellType.DEEP_WATER1:
-                            waterCount += 1
-                    if waterCount == rad*8: # TEST to fill corners also
-                        cell.cellType = cellType.DEEP_WATER1
+        rad0 = 2
+        self.generateCells(rad0, rad0*8, '=', cellType.DEEP_WATER0, (cellType.DEEP_WATER0,cellType.DEEP_WATER1), cellType.DEEP_WATER1)
 
         # Generate deep water 2
-        for column in self.grid:
-            for cell in column:
-                if cell.cellType == cellType.DEEP_WATER1:
-                    waterCount = 0
-                    rad = 4
-                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
-                    for i in surroundingCells:
-                        if i == cellType.WATER or i == cellType.DEEP_WATER0  or i == cellType.DEEP_WATER1 or i == cellType.DEEP_WATER2:
-                            waterCount += 1
-                    if waterCount == rad*8: # TEST to fill corners also
-                        cell.cellType = cellType.DEEP_WATER2
+        rad0 = 3
+        self.generateCells(rad0, rad0*8, '=', cellType.DEEP_WATER1, (cellType.DEEP_WATER1,cellType.DEEP_WATER2), cellType.DEEP_WATER2)
 
-        # Generate deep water 3
-        for column in self.grid:
-            for cell in column:
-                if cell.cellType == cellType.DEEP_WATER2:
-                    waterCount = 0
-                    rad = 6
-                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
-                    for i in surroundingCells:
-                        if i == cellType.WATER or i == cellType.DEEP_WATER0  or i == cellType.DEEP_WATER1 or i == cellType.DEEP_WATER2 or i == cellType.DEEP_WATER3:
-                            waterCount += 1
-                    if waterCount == rad*8: # TEST to fill corners also
-                        cell.cellType = cellType.DEEP_WATER3
+        # Generate deep water 3 
+        rad0 = 3
+        self.generateCells(rad0, rad0*8, '=', cellType.DEEP_WATER2, (cellType.DEEP_WATER2,cellType.DEEP_WATER3), cellType.DEEP_WATER3)
+
+        # TEST round off corners of deep water 3
+        self.generateCells(1, 4, '>', cellType.DEEP_WATER3, (cellType.DEEP_WATER2,), cellType.DEEP_WATER2)
 
         # Generate sand on land that touches water
         for column in self.grid:
@@ -206,7 +151,24 @@ class CellGrid(Canvas):
                         if i == cellType.WATER:
                             cell.cellType = cellType.SAND
                             continue
-                                   
+
+    def generateCells(self, rad, threshold, thresholdOperator, currentCellType, cellTypeConditional, newCellType):
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == currentCellType:
+                    surroundingTypeCount = 0
+                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
+                    for i in surroundingCells:
+                        if i in cellTypeConditional:
+                            surroundingTypeCount += 1
+
+                    # Check threshold operator and check if threshold met, then apply newCellType if it is
+                    if thresholdOperator == '=' and surroundingTypeCount == threshold:
+                        cell.cellType = newCellType
+                    if thresholdOperator == '>' and surroundingTypeCount > threshold:
+                        cell.cellType = newCellType
+                    if thresholdOperator == '<' and surroundingTypeCount < threshold:
+                        cell.cellType = newCellType
 
     def infectCells(self, infectionRate, x, y, cellTypeIn):
         """
@@ -254,25 +216,18 @@ class CellGrid(Canvas):
         for i in range(1 , radius + 1):
             if y > 0:
                 surroundingCellList.append(self.grid[x][y-i].cellType) #UP
-
             if x > 0 and y > 0:
                 surroundingCellList.append(self.grid[x-i][y-i].cellType) #UP LEFT
-
             if x < numColumns - i and y > 0:
                 surroundingCellList.append(self.grid[x+i][y-i].cellType) #UP RIGHT
-
             if y < numRows - i:
                 surroundingCellList.append(self.grid[x][y+i].cellType) #DOWN
-
             if x > 0 and y < numRows - i:
                 surroundingCellList.append(self.grid[x-i][y+i].cellType) #DOWN LEFT
-
             if x < numColumns - i and y < numRows - i:
                 surroundingCellList.append(self.grid[x+i][y+i].cellType) #DOWN RIGHT
-
             if x > 0:
                 surroundingCellList.append(self.grid[x-i][y].cellType) #LEFT
-
             if x < numColumns - i:
                 surroundingCellList.append(self.grid[x+i][y].cellType) #RIGHT
 
@@ -288,15 +243,15 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 5
+pixelsPerCell = 2
 numColumns = int(1890/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(1000/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
-
+infectionRate = randint(90, 100)
 
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, 99.90)
+    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, 99.98, infectionRate)
     grid.pack()
 
     app.mainloop()
