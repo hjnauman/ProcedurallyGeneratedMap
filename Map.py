@@ -1,6 +1,6 @@
 from random import randint
 from tkinter import *
-import random
+import math
 from enum import Enum
 
 class cellType(Enum):
@@ -13,7 +13,29 @@ class cellType(Enum):
     DEEP_WATER3 = 6
     SAND = 7
     RIVER_HEAD = 8
+    RIVER_WATER = 9
 
+class Biomes(Enum):
+    PLAINS = 0
+    DESERT = 1
+    FOREST = 2
+    JUNGLE = 3
+    MOUNTAINS = 4
+    TAIGA = 5
+    TUNDRA = 6
+    SWAMP = 7
+    OCEAN = 8
+
+class Directions(Enum):
+    UP = 0
+    UP_RIGHT = 1
+    RIGHT = 2
+    DOWN_RIGHT = 3
+    DOWN = 4
+    DOWN_LEFT = 5
+    LEFT = 6
+    UP_LEFT = 7
+    
 class Cell():
     def __init__(self, master, x, y, size, cellType):
         """ Constructor of the object called by Cell(...) """
@@ -43,6 +65,10 @@ class Cell():
             color = '#2E519B'
         elif self.cellType == cellType.SAND:
             color = 'tan'
+        elif self.cellType == cellType.RIVER_HEAD:
+            color = 'red'
+        elif self.cellType == cellType.RIVER_WATER:
+            color = 'red'
 
         return color
 
@@ -60,17 +86,17 @@ class Cell():
             self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = color, width = 0)
 
 class CellGrid(Canvas):
-    def __init__(self,master, rowNumber, columnNumber, cellSize, landPercent, infectionRate, *args, **kwargs):
+    def __init__(self,master, rowNumber, columnNumber, cellSize, infectionRate, Biome, *args, **kwargs):
         Canvas.__init__(self, master, width = cellSize * columnNumber , height = cellSize * rowNumber, *args, **kwargs)
         
         self.cellSize = cellSize
-
+        self.Biome = Biome
         self.grid = []
         for column in range(columnNumber):
 
             line = []
             for row in range(rowNumber):
-                cellType = self.chooseCellType(landPercent)
+                cellType = self.chooseBaseCellTypes(Biome)
                 line.append(Cell(self, column, row, cellSize, cellType))
             self.grid.append(line)
 
@@ -79,7 +105,7 @@ class CellGrid(Canvas):
         self.draw()
 
 
-    def chooseCellType(self, landPercent):
+    def chooseBaseCellTypes(self, Biome):
         """
         Description
         -------------
@@ -90,15 +116,15 @@ class CellGrid(Canvas):
         --------
         landPercent - A float value between 0.00 and 100.00 that represents the percentage of land you would like on the map
         """
-        percent = landPercent * 10 * 10
-        randomValue = randint(0, 9999)
-        if randomValue < percent:
-            return cellType.LAND
-        else:
-            if randomValue % 2 == 0:
-                return cellType.WATER_START
+        numCells = numColumns * numRows
+        if Biome == Biomes.PLAINS:
+            landPercent = 99.995 * 1000
+            randomValue = randint(0, 99999)
+            if randomValue < landPercent:
+                return cellType.LAND
             else:
-                return cellType.RIVER_HEAD
+                return cellType.WATER_START
+
 
     def createWater(self, infectionRate):
         """
@@ -112,9 +138,6 @@ class CellGrid(Canvas):
                 if cell.cellType == cellType.WATER_START:
                     cell.cellType = cellType.WATER
                     self.infectCells(infectionRate, cell.x, cell.y, cellType.WATER)
-                elif cell.cellType == cellType.RIVER_HEAD:
-                    # cell.cellType = cellType.WATER
-                    self.createRiver()
 
         # Fill in single-cells of land
         self.generateCells(1, 4, '>', cellType.LAND, (cellType.WATER,), cellType.WATER)
@@ -142,32 +165,41 @@ class CellGrid(Canvas):
         self.generateCells(1, 4, '>', cellType.DEEP_WATER3, (cellType.DEEP_WATER2,), cellType.DEEP_WATER2)
 
         # Generate sand on land that touches water
+        self.generateCells(1, 0, '>', cellType.LAND, (cellType.WATER,), cellType.SAND)
+
+        # Generate rivers
+        # amountOfSand = 0
+        # for column in self.grid:
+        #     for cell in column:
+        #         if cell.cellType == cellType.SAND:
+        #             amountOfSand += 1
         for column in self.grid:
             for cell in column:
-                if cell.cellType == cellType.LAND:
-                    rad = 1
-                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
-                    for i in surroundingCells:
-                        if i == cellType.WATER:
-                            cell.cellType = cellType.SAND
-                            continue
+                if cell.cellType == cellType.SAND:
+                    if randint(0,10000) > 9950:
+                        cell.cellType = cellType.RIVER_HEAD
+                        surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
+                        direction = self.getDirection(surroundingCells, cell.x, cell.y)
+                        distance = randint(0,100)
+                        self.createRiver(cell.x, cell.y, direction, distance)
+
 
     def generateCells(self, rad, threshold, thresholdOperator, currentCellType, cellTypeConditional, newCellType):
         for column in self.grid:
             for cell in column:
                 if cell.cellType == currentCellType:
                     surroundingTypeCount = 0
-                    surroundingCells = self.getSurroundingCells(cell.x, cell.y, rad)
+                    surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, rad)
                     for i in surroundingCells:
-                        if i in cellTypeConditional:
+                        if i.cellType in cellTypeConditional:
                             surroundingTypeCount += 1
 
                     # Check threshold operator and check if threshold met, then apply newCellType if it is
                     if thresholdOperator == '=' and surroundingTypeCount == threshold:
                         cell.cellType = newCellType
-                    if thresholdOperator == '>' and surroundingTypeCount > threshold:
+                    elif thresholdOperator == '>' and surroundingTypeCount > threshold:
                         cell.cellType = newCellType
-                    if thresholdOperator == '<' and surroundingTypeCount < threshold:
+                    elif thresholdOperator == '<' and surroundingTypeCount < threshold:
                         cell.cellType = newCellType
 
     def infectCells(self, infectionRate, x, y, cellTypeIn):
@@ -211,30 +243,59 @@ class CellGrid(Canvas):
                 self.grid[x][y].cellType = cellTypeIn
                 self.infectCells(infectionRate - 1, x, y, cellTypeIn)
 
-    def getSurroundingCells(self, x, y, radius):
+    def getSurroundingCellsInfo(self, x, y, radius):
+        """
+        Description
+        -----------
+        This function returns a list that contains the cell types and locations of the surrounding cells
+        
+        Params
+        --------
+        x - x coordinate of the infecting cell
+        y - y coordinate of the infecting cell
+        radius - distance (in number of cells from the center cell) to check
+        """
         surroundingCellList = []
         for i in range(1 , radius + 1):
             if y > 0:
-                surroundingCellList.append(self.grid[x][y-i].cellType) #UP
-            if x > 0 and y > 0:
-                surroundingCellList.append(self.grid[x-i][y-i].cellType) #UP LEFT
+                surroundingCellList.append(self.grid[x][y-i]) #UP
             if x < numColumns - i and y > 0:
-                surroundingCellList.append(self.grid[x+i][y-i].cellType) #UP RIGHT
-            if y < numRows - i:
-                surroundingCellList.append(self.grid[x][y+i].cellType) #DOWN
-            if x > 0 and y < numRows - i:
-                surroundingCellList.append(self.grid[x-i][y+i].cellType) #DOWN LEFT
-            if x < numColumns - i and y < numRows - i:
-                surroundingCellList.append(self.grid[x+i][y+i].cellType) #DOWN RIGHT
-            if x > 0:
-                surroundingCellList.append(self.grid[x-i][y].cellType) #LEFT
+                surroundingCellList.append(self.grid[x+i][y-i]) #UP RIGHT
             if x < numColumns - i:
-                surroundingCellList.append(self.grid[x+i][y].cellType) #RIGHT
+                surroundingCellList.append(self.grid[x+i][y]) #RIGHT
+            if x < numColumns - i and y < numRows - i:
+                surroundingCellList.append(self.grid[x+i][y+i]) #DOWN RIGHT
+            if y < numRows - i:
+                surroundingCellList.append(self.grid[x][y+i]) #DOWN
+            if x > 0 and y < numRows - i:
+                surroundingCellList.append(self.grid[x-i][y+i]) #DOWN LEFT
+            if x > 0:
+                surroundingCellList.append(self.grid[x-i][y]) #LEFT
+            if x > 0 and y > 0:
+                surroundingCellList.append(self.grid[x-i][y-i]) #UP LEFT
 
         return surroundingCellList # returns a list of the surrounding cells' cellTypes
     
-    def createRiver(self, ):
+    def getDirection(self, surroundingCellList, x, y):
+        waterCount = 0                                  # Find "center" of surrounding water tiles
+        for cell in surroundingCellList:
+            if cell.cellType == cellType.SAND:
+                cell.cellType = cellType.RIVER_WATER
+            if cell.cellType == cellType.WATER:
+                waterCount +=1
+        waterIndex = math.ceil(waterCount/2)
+        for cell in surroundingCellList:
+            if cell.cellType == cellType.WATER:
+                waterIndex -= 1
+            if waterIndex == 0:
+                direction = surroundingCellList.index(cell)
+                direction = (direction + 4) % 8         # Find opposite direction from chosen cell
+                return direction
+
+    def createRiver(self, x , y, direction, distance):
         
+        
+
         pass
 
     def draw(self):
@@ -243,7 +304,7 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 2
+pixelsPerCell = 3
 numColumns = int(1890/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(1000/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
@@ -251,7 +312,7 @@ infectionRate = randint(90, 100)
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, 99.98, infectionRate)
+    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
     grid.pack()
 
     app.mainloop()
