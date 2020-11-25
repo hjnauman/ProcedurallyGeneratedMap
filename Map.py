@@ -389,67 +389,81 @@ class CellGrid(Canvas):
         xNew = x+offsets[0]*distance
         yNew = y+offsets[1]*distance
 
-        if direction == Directions.UP.value:
-            for i in range(distance):
-                if y > 0:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+        for i in range(distance):
+            if (
+                (direction == Directions.UP.value and y > 0)
+                or (direction == Directions.UP_RIGHT.value and x < numColumns - i and y > 0)
+                or (direction == Directions.RIGHT.value and x < numColumns - i)
+                or (direction == Directions.DOWN_RIGHT.value and x < numColumns - i and y < numRows - i)
+                or (direction == Directions.DOWN.value and y < numRows - i)
+                or (direction == Directions.DOWN_LEFT.value and x > 0 and y < numRows - i)
+                or (direction == Directions.LEFT.value and x > 0)
+                or (direction == Directions.UP_LEFT.value and x > 0 and y > 0)
+            ):
+                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
                         self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #        xNew = x
-     #       yNew = y-distance
 
-        elif direction == Directions.UP_RIGHT.value:
-            for i in range(distance):
-                if x < numColumns - i and y > 0:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-      #      xNew = x+distance
-       #     yNew = y-distance
-
-        elif direction == Directions.RIGHT.value:
-            for i in range(distance):
-                if x < numColumns - i:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #        xNew = x+distance
-     #       yNew = y
-
-        elif direction == Directions.DOWN_RIGHT.value:
-            for i in range(distance):
-                if x < numColumns - i and y < numRows - i:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-      #      xNew = x+distance
-       #     yNew = y+distance
-
-        elif direction == Directions.DOWN.value:
-            for i in range(distance):
-                if y < numRows - i:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #        xNew = x
-     #       yNew = y+distance
-
-        elif direction == Directions.DOWN_LEFT.value:
-            for i in range(distance):
-                if x > 0 and y < numRows - i:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-      #      xNew = x-distance
-       #     yNew = y+distance
-
-        elif direction == Directions.LEFT.value:
-            for i in range(distance):
-                if x > 0:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #        xNew = x-distance
-     #       yNew = y
-
-        elif direction == Directions.UP_LEFT.value:
-            for i in range(distance):
-                if x > 0 and y > 0:
-                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #    if direction == Directions.UP.value:
+    #        for i in range(distance):
+    #            if y > 0:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    ##        xNew = x
+    # #       yNew = y-distance
+#
+    #    elif direction == Directions.UP_RIGHT.value:
+    #        for i in range(distance):
+    #            if x < numColumns - i and y > 0:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #  #      xNew = x+distance
+    #   #     yNew = y-distance
+#
+    #    elif direction == Directions.RIGHT.value:
+    #        for i in range(distance):
+    #            if x < numColumns - i:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    ##        xNew = x+distance
+    # #       yNew = y
+#
+    #    elif direction == Directions.DOWN_RIGHT.value:
+    #        for i in range(distance):
+    #            if x < numColumns - i and y < numRows - i:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #  #      xNew = x+distance
+    #   #     yNew = y+distance
+#
+    #    elif direction == Directions.DOWN.value:
+    #        for i in range(distance):
+    #            if y < numRows - i:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    ##        xNew = x
+    # #       yNew = y+distance
+#
+    #    elif direction == Directions.DOWN_LEFT.value:
+    #        for i in range(distance):
+    #            if x > 0 and y < numRows - i:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #  #      xNew = x-distance
+    #   #     yNew = y+distance
+#
+    #    elif direction == Directions.LEFT.value:
+    #        for i in range(distance):
+    #            if x > 0:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    ##        xNew = x-distance
+    # #       yNew = y
+#
+    #    elif direction == Directions.UP_LEFT.value:
+    #        for i in range(distance):
+    #            if x > 0 and y > 0:
+    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
       #      xNew = x-distance
        #     yNew = y-distance
 
