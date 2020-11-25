@@ -399,6 +399,7 @@ class CellGrid(Canvas):
                 direction = (direction + 4) % 8         # Find opposite direction from chosen cell
                 return direction
 
+    #Christian is big boi
     def getDirectionCoordinates(self, direction):
         xOff = 0
         yOff = 0
