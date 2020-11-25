@@ -306,9 +306,9 @@ class CellGrid(Canvas):
         """
         surroundingCellList = []
         for i in range(1 , radius + 1):
-            if y > 0:
+            if y-i >= 0:
                 surroundingCellList.append(self.grid[x][y-i]) #UP
-            if x < numColumns - i and y > 0:
+            if x < numColumns - i and y-i >= 0:
                 surroundingCellList.append(self.grid[x+i][y-i]) #UP RIGHT
             if x < numColumns - i:
                 surroundingCellList.append(self.grid[x+i][y]) #RIGHT
@@ -316,11 +316,11 @@ class CellGrid(Canvas):
                 surroundingCellList.append(self.grid[x+i][y+i]) #DOWN RIGHT
             if y < numRows - i:
                 surroundingCellList.append(self.grid[x][y+i]) #DOWN
-            if x > 0 and y < numRows - i:
+            if x-i >= 0 and y < numRows - i:
                 surroundingCellList.append(self.grid[x-i][y+i]) #DOWN LEFT
-            if x > 0:
+            if x-i >= 0:
                 surroundingCellList.append(self.grid[x-i][y]) #LEFT
-            if x > 0 and y > 0:
+            if x-i >= 0 and y-i >= 0:
                 surroundingCellList.append(self.grid[x-i][y-i]) #UP LEFT
 
         return surroundingCellList # returns a list of the surrounding cells' cellTypes
@@ -370,7 +370,7 @@ class CellGrid(Canvas):
             xOff = -1
             yOff = -1
 
-        print(str(xOff)+", "+str(yOff))
+        # print(str(xOff)+", "+str(yOff))
 
         return [xOff,yOff]
 
@@ -391,14 +391,17 @@ class CellGrid(Canvas):
 
         for i in range(distance):
             if (
-                (direction == Directions.UP.value and y > 0)
-                or (direction == Directions.UP_RIGHT.value and x < numColumns - i and y > 0)
-                or (direction == Directions.RIGHT.value and x < numColumns - i)
-                or (direction == Directions.DOWN_RIGHT.value and x < numColumns - i and y < numRows - i)
-                or (direction == Directions.DOWN.value and y < numRows - i)
-                or (direction == Directions.DOWN_LEFT.value and x > 0 and y < numRows - i)
-                or (direction == Directions.LEFT.value and x > 0)
-                or (direction == Directions.UP_LEFT.value and x > 0 and y > 0)
+    #            (direction == Directions.UP.value and y > 0)
+    #            or (direction == Directions.UP_RIGHT.value and x < numColumns - i and y > 0)
+    #            or (direction == Directions.RIGHT.value and x < numColumns - i)
+    #            or (direction == Directions.DOWN_RIGHT.value and x < numColumns - i and y < numRows - i)
+    #            or (direction == Directions.DOWN.value and y < numRows - i)
+    #            or (direction == Directions.DOWN_LEFT.value and x > 0 and y < numRows - i)
+    #            or (direction == Directions.LEFT.value and x > 0)
+    #            or (direction == Directions.UP_LEFT.value and x > 0 and y > 0)
+
+                (x+i*offsets[0]) in range(0, len(self.grid))
+                and (y+i*offsets[1]) in range(0, len(self.grid[0]))
             ):
                 if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
                         self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
@@ -468,6 +471,9 @@ class CellGrid(Canvas):
        #     yNew = y-distance
 
         # Repeat with new line
+
+        if not ((xNew) in range(0, len(self.grid)) and (yNew) in range(0, len(self.grid[0]))):
+            return
 
         surroundingEndList = self.getSurroundingCellsInfo(xNew,yNew,1)
         for cell in surroundingEndList:
