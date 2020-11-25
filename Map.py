@@ -118,7 +118,7 @@ class CellGrid(Canvas):
         """
         numCells = numColumns * numRows
         if Biome == Biomes.PLAINS:
-            landPercent = 99.995 * 1000
+            landPercent = 99.984 * 1000
             randomValue = randint(0, 99999)
             if randomValue < landPercent:
                 return cellType.LAND
@@ -180,7 +180,7 @@ class CellGrid(Canvas):
                         cell.cellType = cellType.RIVER_HEAD
                         surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
                         direction = self.getDirection(surroundingCells, cell.x, cell.y)
-                        distance = randint(0,100)
+                        distance = 10
                         self.createRiver(cell.x, cell.y, direction, distance)
 
 
@@ -293,10 +293,46 @@ class CellGrid(Canvas):
                 return direction
 
     def createRiver(self, x , y, direction, distance):
-        
-        
+        if direction == Directions.UP.value:
+            for i in range(distance):
+                if y > 0:
+                    self.grid[x][y-i].cellType = cellType.RIVER_WATER
 
-        pass
+        elif direction == Directions.UP_RIGHT.value:
+            for i in range(distance):
+                if x < numColumns - i and y > 0:
+                    self.grid[x+i][y-i].cellType = cellType.RIVER_WATER
+
+        elif direction == Directions.RIGHT.value:
+            for i in range(distance):
+                if x < numColumns - i:
+                    self.grid[x+i][y].cellType = cellType.RIVER_WATER
+
+        elif direction == Directions.DOWN_RIGHT.value:
+            for i in range(distance):
+                if x < numColumns - i and y < numRows - i:
+                    self.grid[x+i][y+i].cellType = cellType.RIVER_WATER
+
+        elif direction == Directions.DOWN.value:
+            for i in range(distance):
+                if y < numRows - i:
+                    self.grid[x][y+i].cellType = cellType.RIVER_WATER
+
+        elif direction == Directions.DOWN_LEFT.value:
+            for i in range(distance):
+                if x > 0 and y < numRows - i:
+                    self.grid[x-i][y+i].cellType = cellType.RIVER_WATER
+
+        elif direction == Directions.LEFT.value:
+            for i in range(distance):
+                if x > 0:
+                    self.grid[x-i][y].cellType = cellType.RIVER_WATER
+
+        elif direction == Directions.UP_LEFT.value:
+            for i in range(distance):
+                if x > 0 and y > 0:
+                    self.grid[x-i][y-i].cellType = cellType.RIVER_WATER
+
 
     def draw(self):
         for column in self.grid:
@@ -304,7 +340,7 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 3
+pixelsPerCell = 62
 numColumns = int(1890/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(1000/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
