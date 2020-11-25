@@ -250,16 +250,42 @@ class CellGrid(Canvas):
         # Generate specific land around cliffs
         self.generateCells(1, 0, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,), (cellType.LAND3,), cellType.LAND)
 
-        # Fill in single-cells of land between cliffs
-        self.generateCells(1, 4, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,), (cellType.LAND3,), cellType.LAND3)
+        # Create cliff peaks
+        rad0 = 3
+        self.generateCells(rad0, rad0*8, '=', (cellType.LAND3,), (cellType.LAND3,), cellType.LAND5)
+
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND5:
+                    #if randint(0, 10000) > 9500:
+                    self.infectCells(10, cell.x, cell.y, cellType.LAND5, (cellType.LAND3,))
 
         #LAND4 (cliffs, higher elevation)
-        rad0 = 1
-        self.generateCells(rad0, rad0*8, '=', (cellType.LAND3,), (cellType.LAND3,cellType.LAND4,), cellType.LAND4)
+    #    rad0 = 1
+    #    self.generateCells(rad0, rad0*8, '=', (cellType.LAND3,), (cellType.LAND3,cellType.LAND4,), cellType.LAND4)
 
         #LAND5 (cliffs, even higher elevation)
-        rad0 = 2
-        self.generateCells(rad0, rad0*8, '=', (cellType.LAND4,), (cellType.LAND4,cellType.LAND5), cellType.LAND5)
+    #    rad0 = 2
+    #    self.generateCells(rad0, rad0*8, '=', (cellType.LAND4,), (cellType.LAND4,cellType.LAND5), cellType.LAND5)
+
+        # Fill in single-cells of land between cliffs
+        self.generateCells(1, 4, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,), (cellType.LAND3,), cellType.LAND3)
+#
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND3:
+                    if randint(0, 10000) > 9800:
+                        self.cellType = cellType.LAND5
+                        self.infectCells(40, cell.x, cell.y, cellType.LAND4, (cellType.LAND3,))
+#
+    #    #LAND5 (cliffs, different color) (low spawn rate, but high infection rate)
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND4:
+                    if randint(0, 10000) > 9800:
+                        self.cellType = cellType.LAND5
+                        self.infectCells(40, cell.x, cell.y, cellType.LAND5, (cellType.LAND4,))
+
 
         # --------------------------------------------------------------------
 
