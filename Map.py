@@ -14,6 +14,9 @@ class cellType(Enum):
     SAND = 7
     RIVER_HEAD = 8
     RIVER_WATER = 9
+    LAND1 = 10
+    LAND2 = 11
+    RIVER_BANK = 12
 
 class Biomes(Enum):
     PLAINS = 0
@@ -66,9 +69,15 @@ class Cell():
         elif self.cellType == cellType.SAND:
             color = 'tan'
         elif self.cellType == cellType.RIVER_HEAD:
-            color = 'red'
+            color = 'DodgerBlue4'
         elif self.cellType == cellType.RIVER_WATER:
-            color = 'red'
+            color = 'RoyalBlue4'
+        elif self.cellType == cellType.LAND1:
+            color = 'forest green'
+        elif self.cellType == cellType.LAND2:
+            color = 'olive drab'
+        elif self.cellType == cellType.RIVER_BANK:
+            color = 'chartreuse4'
 
         return color
 
@@ -118,7 +127,7 @@ class CellGrid(Canvas):
         """
         numCells = numColumns * numRows
         if Biome == Biomes.PLAINS:
-            landPercent = 99.984 * 1000
+            landPercent = 1000 * 99.98 #99.984
             randomValue = randint(0, 99999)
             if randomValue < landPercent:
                 return cellType.LAND
@@ -137,7 +146,7 @@ class CellGrid(Canvas):
             for cell in column:
                 if cell.cellType == cellType.WATER_START:
                     cell.cellType = cellType.WATER
-                    self.infectCells(infectionRate, cell.x, cell.y, cellType.WATER)
+                    self.infectCells(infectionRate, cell.x, cell.y, cellType.WATER, (cellType.LAND,))
 
         # Fill in single-cells of land
         self.generateCells(1, 4, '>', cellType.LAND, (cellType.WATER,), cellType.WATER)
@@ -168,6 +177,7 @@ class CellGrid(Canvas):
         self.generateCells(1, 0, '>', cellType.LAND, (cellType.WATER,), cellType.SAND)
 
         # Generate rivers
+
         # amountOfSand = 0
         # for column in self.grid:
         #     for cell in column:
@@ -176,12 +186,50 @@ class CellGrid(Canvas):
         for column in self.grid:
             for cell in column:
                 if cell.cellType == cellType.SAND:
-                    if randint(0,10000) > 9950:
+                    surroundingCells = self.getSurroundingCellsInfo(cell.x,cell.y,1)
+                    sandCount = 0
+                    waterCount = 0
+                    for i in surroundingCells:
+                        if i.cellType == cellType.SAND:
+                            sandCount += 1
+                        elif i.cellType == cellType.WATER:
+                            waterCount += 1
+                    if sandCount < 4 and waterCount > 0 and randint(0,10000) > 9950:
+                    #if randint(0,10000) > 9950:
                         cell.cellType = cellType.RIVER_HEAD
                         surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
                         direction = self.getDirection(surroundingCells, cell.x, cell.y)
-                        distance = 10
+                        distance = randint(5,10)
                         self.createRiver(cell.x, cell.y, direction, distance)
+
+        # Make rivers thick again
+    #    for column in self.grid:
+    #        for cell in column:
+    #            if cell.cellType == cellType.RIVER_WATER:
+    #                self.infectCells(10,cell.x,cell.y,cellType.RIVER_WATER,(cellType.LAND,))
+
+        # Generate banks around rivers
+        self.generateCells(1, 0, '>', cellType.LAND, (cellType.RIVER_WATER,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
+
+        # Generate areas of differently-colored land -------------------------
+
+        #LAND1
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND:
+                    if randint(0, 10000) > 9950:
+                        self.cellType = cellType.LAND1
+                        self.infectCells(40, cell.x, cell.y, cellType.LAND1, (cellType.LAND,))
+
+        #LAND2
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND or cell.cellType == cellType.LAND1:
+                    if randint(0, 10000) > 9950:
+                        self.cellType = cellType.LAND2
+                        self.infectCells(30, cell.x, cell.y, cellType.LAND2, (cellType.LAND,cellType.LAND1))
+
+        # --------------------------------------------------------------------
 
 
     def generateCells(self, rad, threshold, thresholdOperator, currentCellType, cellTypeConditional, newCellType):
@@ -202,7 +250,7 @@ class CellGrid(Canvas):
                     elif thresholdOperator == '<' and surroundingTypeCount < threshold:
                         cell.cellType = newCellType
 
-    def infectCells(self, infectionRate, x, y, cellTypeIn):
+    def infectCells(self, infectionRate, x, y, cellTypeIn, cellTypeToReplace):
         """
         Description
         -------------
@@ -215,16 +263,16 @@ class CellGrid(Canvas):
         y - y coordinate of the infecting cell
         cellTypeIn - cellType that infected cells will change to
         """
-        self.infectCell(infectionRate, x, y-1,cellTypeIn) # UP
-        self.infectCell(infectionRate, x-1, y-1,cellTypeIn) # UP LEFT
-        self.infectCell(infectionRate, x+1, y-1,cellTypeIn) # UP RIGHT
-        self.infectCell(infectionRate, x, y+1,cellTypeIn) # DOWN
-        self.infectCell(infectionRate, x-1, y+1,cellTypeIn) # DOWN LEFT
-        self.infectCell(infectionRate, x+1, y+1,cellTypeIn) # DOWN RIGHT
-        self.infectCell(infectionRate, x-1, y,cellTypeIn) # LEFT
-        self.infectCell(infectionRate, x+1, y,cellTypeIn) # RIGHT
+        self.infectCell(infectionRate, x, y-1,cellTypeIn,cellTypeToReplace) # UP
+        self.infectCell(infectionRate, x-1, y-1,cellTypeIn,cellTypeToReplace) # UP LEFT
+        self.infectCell(infectionRate, x+1, y-1,cellTypeIn,cellTypeToReplace) # UP RIGHT
+        self.infectCell(infectionRate, x, y+1,cellTypeIn,cellTypeToReplace) # DOWN
+        self.infectCell(infectionRate, x-1, y+1,cellTypeIn,cellTypeToReplace) # DOWN LEFT
+        self.infectCell(infectionRate, x+1, y+1,cellTypeIn,cellTypeToReplace) # DOWN RIGHT
+        self.infectCell(infectionRate, x-1, y,cellTypeIn,cellTypeToReplace) # LEFT
+        self.infectCell(infectionRate, x+1, y,cellTypeIn,cellTypeToReplace) # RIGHT
     
-    def infectCell(self, infectionRate, x, y, cellTypeIn):
+    def infectCell(self, infectionRate, x, y, cellTypeIn, cellTypeToReplace):
         """
         Description
         -------------
@@ -238,10 +286,11 @@ class CellGrid(Canvas):
         cellTypeIn - cellType that infected cells will change to
         """
         if y < numRows -1 and y > 0 and x < numColumns -1 and x > 0: # Check whether given coordinates work for a cell in the grid
-            randValue = randint(0,99)
-            if randValue < infectionRate and self.grid[x][y].cellType != cellTypeIn and self.grid[x][y].cellType != cellType.WATER_START:
-                self.grid[x][y].cellType = cellTypeIn
-                self.infectCells(infectionRate - 1, x, y, cellTypeIn)
+            if self.grid[x][y].cellType in cellTypeToReplace:
+                randValue = randint(0,99)
+                if randValue < infectionRate and self.grid[x][y].cellType != cellTypeIn and self.grid[x][y].cellType != cellType.WATER_START:
+                    self.grid[x][y].cellType = cellTypeIn
+                    self.infectCells(infectionRate - 1, x, y, cellTypeIn, cellTypeToReplace)
 
     def getSurroundingCellsInfo(self, x, y, radius):
         """
@@ -292,47 +341,138 @@ class CellGrid(Canvas):
                 direction = (direction + 4) % 8         # Find opposite direction from chosen cell
                 return direction
 
+    def getDirectionCoordinates(self, direction):
+        xOff = 0
+        yOff = 0
+
+        if direction == Directions.UP.value:
+            xOff = 0
+            yOff = -1
+        elif direction == Directions.UP_RIGHT.value:
+            xOff = 1
+            yOff = -1
+        elif direction == Directions.RIGHT.value:
+            xOff = 1
+            yOff = 0
+        elif direction == Directions.DOWN_RIGHT.value:
+            xOff = 1
+            yOff = 1
+        elif direction == Directions.DOWN.value:
+            xOff = 0
+            yOff = 1
+        elif direction == Directions.DOWN_LEFT.value:
+            xOff = -1
+            yOff = 1
+        elif direction == Directions.LEFT.value:
+            xOff = -1
+            yOff = 0
+        elif direction == Directions.UP_LEFT.value:
+            xOff = -1
+            yOff = -1
+
+        print(str(xOff)+", "+str(yOff))
+
+        return [xOff,yOff]
+
+    def checkIfWater(self, cell):
+        if cell.cellType == cellType.WATER or cell.cellType == cellType.DEEP_WATER0 or cell.cellType == cellType.DEEP_WATER1 or cell.cellType == cellType.DEEP_WATER2 or cell.cellType == cellType.DEEP_WATER3:
+            return TRUE
+        else:
+            return FALSE
+
     def createRiver(self, x , y, direction, distance):
+
+        # New coords for next line
+
+        offsets = self.getDirectionCoordinates(direction)
+
+        xNew = x+offsets[0]*distance
+        yNew = y+offsets[1]*distance
+
         if direction == Directions.UP.value:
             for i in range(distance):
                 if y > 0:
-                    self.grid[x][y-i].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #        xNew = x
+     #       yNew = y-distance
 
         elif direction == Directions.UP_RIGHT.value:
             for i in range(distance):
                 if x < numColumns - i and y > 0:
-                    self.grid[x+i][y-i].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+      #      xNew = x+distance
+       #     yNew = y-distance
 
         elif direction == Directions.RIGHT.value:
             for i in range(distance):
                 if x < numColumns - i:
-                    self.grid[x+i][y].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #        xNew = x+distance
+     #       yNew = y
 
         elif direction == Directions.DOWN_RIGHT.value:
             for i in range(distance):
                 if x < numColumns - i and y < numRows - i:
-                    self.grid[x+i][y+i].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+      #      xNew = x+distance
+       #     yNew = y+distance
 
         elif direction == Directions.DOWN.value:
             for i in range(distance):
                 if y < numRows - i:
-                    self.grid[x][y+i].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #        xNew = x
+     #       yNew = y+distance
 
         elif direction == Directions.DOWN_LEFT.value:
             for i in range(distance):
                 if x > 0 and y < numRows - i:
-                    self.grid[x-i][y+i].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+      #      xNew = x-distance
+       #     yNew = y+distance
 
         elif direction == Directions.LEFT.value:
             for i in range(distance):
                 if x > 0:
-                    self.grid[x-i][y].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+    #        xNew = x-distance
+     #       yNew = y
 
         elif direction == Directions.UP_LEFT.value:
             for i in range(distance):
                 if x > 0 and y > 0:
-                    self.grid[x-i][y-i].cellType = cellType.RIVER_WATER
+                    if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
+      #      xNew = x-distance
+       #     yNew = y-distance
 
+        # Repeat with new line
+
+        surroundingEndList = self.getSurroundingCellsInfo(xNew,yNew,1)
+        for cell in surroundingEndList:
+            if cell.cellType == cellType.WATER:
+                return
+
+        if randint(0,100) > 10:
+            distanceNew = randint(2,5)
+            dirChooser = randint(0,2)
+
+            directionNew = (direction+1) % 8
+
+            if dirChooser == 1:
+                directionNew = (direction-1) % 8
+
+            self.createRiver(xNew , yNew, directionNew, distanceNew)
+
+            if randint(0,100) > 70:  #fork
+                self.createRiver(xNew , yNew, directionNew, distanceNew)
 
     def draw(self):
         for column in self.grid:
@@ -340,7 +480,7 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 62
+pixelsPerCell = 10
 numColumns = int(1890/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(1000/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
