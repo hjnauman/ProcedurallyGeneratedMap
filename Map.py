@@ -16,7 +16,10 @@ class cellType(Enum):
     RIVER_WATER = 9
     LAND1 = 10
     LAND2 = 11
-    RIVER_BANK = 12
+    LAND3 = 12
+    LAND4 = 13
+    LAND5 = 14
+    RIVER_BANK = 15
 
 class Biomes(Enum):
     PLAINS = 0
@@ -76,6 +79,12 @@ class Cell():
             color = 'forest green'
         elif self.cellType == cellType.LAND2:
             color = 'olive drab'
+        elif self.cellType == cellType.LAND3:
+            color = 'burlywood4'
+        elif self.cellType == cellType.LAND4:
+            color = '#9E805B'
+        elif self.cellType == cellType.LAND5:
+            color = '#AD9270'
         elif self.cellType == cellType.RIVER_BANK:
             color = 'chartreuse4'
 
@@ -149,32 +158,32 @@ class CellGrid(Canvas):
                     self.infectCells(infectionRate, cell.x, cell.y, cellType.WATER, (cellType.LAND,))
 
         # Fill in single-cells of land
-        self.generateCells(1, 4, '>', cellType.LAND, (cellType.WATER,), cellType.WATER)
+        self.generateCells(1, 4, '>', (cellType.LAND,), (cellType.WATER,), cellType.WATER)
 
         # Fill in single-cells of water
-        self.generateCells(1, 2, '<', cellType.WATER, (cellType.WATER,), cellType.LAND)
+        self.generateCells(1, 2, '<', (cellType.WATER,), (cellType.WATER,), cellType.LAND)
 
         # Generate deep water 0
         rad0 = 2
-        self.generateCells(rad0, rad0*8, '=', cellType.WATER, (cellType.WATER,cellType.DEEP_WATER0), cellType.DEEP_WATER0)
+        self.generateCells(rad0, rad0*8, '=', (cellType.WATER,), (cellType.WATER,cellType.DEEP_WATER0), cellType.DEEP_WATER0)
 
         # Generate deep water 1
         rad0 = 2
-        self.generateCells(rad0, rad0*8, '=', cellType.DEEP_WATER0, (cellType.DEEP_WATER0,cellType.DEEP_WATER1), cellType.DEEP_WATER1)
+        self.generateCells(rad0, rad0*8, '=', (cellType.DEEP_WATER0,), (cellType.DEEP_WATER0,cellType.DEEP_WATER1), cellType.DEEP_WATER1)
 
         # Generate deep water 2
         rad0 = 3
-        self.generateCells(rad0, rad0*8, '=', cellType.DEEP_WATER1, (cellType.DEEP_WATER1,cellType.DEEP_WATER2), cellType.DEEP_WATER2)
+        self.generateCells(rad0, rad0*8, '=', (cellType.DEEP_WATER1,), (cellType.DEEP_WATER1,cellType.DEEP_WATER2), cellType.DEEP_WATER2)
 
         # Generate deep water 3 
         rad0 = 3
-        self.generateCells(rad0, rad0*8, '=', cellType.DEEP_WATER2, (cellType.DEEP_WATER2,cellType.DEEP_WATER3), cellType.DEEP_WATER3)
+        self.generateCells(rad0, rad0*8, '=', (cellType.DEEP_WATER2,), (cellType.DEEP_WATER2,cellType.DEEP_WATER3), cellType.DEEP_WATER3)
 
         # TEST round off corners of deep water 3
-        self.generateCells(1, 4, '>', cellType.DEEP_WATER3, (cellType.DEEP_WATER2,), cellType.DEEP_WATER2)
+        self.generateCells(1, 4, '>', (cellType.DEEP_WATER3,), (cellType.DEEP_WATER2,), cellType.DEEP_WATER2)
 
         # Generate sand on land that touches water
-        self.generateCells(1, 0, '>', cellType.LAND, (cellType.WATER,), cellType.SAND)
+        self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.WATER,), cellType.SAND)
 
         # Generate rivers
 
@@ -200,7 +209,8 @@ class CellGrid(Canvas):
                         surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
                         direction = self.getDirection(surroundingCells, cell.x, cell.y)
                         distance = randint(5,10)
-                        self.createRiver(cell.x, cell.y, direction, distance)
+                        maxRiverLen = randint(5,10)
+                        self.createRiver(cell.x, cell.y, direction, distance, maxRiverLen)
 
         # Make rivers thick again
     #    for column in self.grid:
@@ -209,7 +219,7 @@ class CellGrid(Canvas):
     #                self.infectCells(10,cell.x,cell.y,cellType.RIVER_WATER,(cellType.LAND,))
 
         # Generate banks around rivers
-        self.generateCells(1, 0, '>', cellType.LAND, (cellType.RIVER_WATER,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
+        self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
 
         # Generate areas of differently-colored land -------------------------
 
@@ -229,13 +239,35 @@ class CellGrid(Canvas):
                         self.cellType = cellType.LAND2
                         self.infectCells(30, cell.x, cell.y, cellType.LAND2, (cellType.LAND,cellType.LAND1))
 
+        #LAND3 (cliffs) (low spawn rate, but high infection rate)
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND or cell.cellType == cellType.LAND1 or cell.cellType == cellType.LAND2:
+                    if randint(0, 10000) > 9995:
+                        self.cellType = cellType.LAND3
+                        self.infectCells(50, cell.x, cell.y, cellType.LAND3, (cellType.LAND,cellType.LAND1,cellType.LAND2))
+
+        # Generate specific land around cliffs
+        self.generateCells(1, 0, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,), (cellType.LAND3,), cellType.LAND)
+
+        # Fill in single-cells of land between cliffs
+        self.generateCells(1, 4, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,), (cellType.LAND3,), cellType.LAND3)
+
+        #LAND4 (cliffs, higher elevation)
+        rad0 = 1
+        self.generateCells(rad0, rad0*8, '=', (cellType.LAND3,), (cellType.LAND3,cellType.LAND4,), cellType.LAND4)
+
+        #LAND5 (cliffs, even higher elevation)
+        rad0 = 2
+        self.generateCells(rad0, rad0*8, '=', (cellType.LAND4,), (cellType.LAND4,cellType.LAND5), cellType.LAND5)
+
         # --------------------------------------------------------------------
 
 
-    def generateCells(self, rad, threshold, thresholdOperator, currentCellType, cellTypeConditional, newCellType):
+    def generateCells(self, rad, threshold, thresholdOperator, currentCellTypes, cellTypeConditional, newCellType):
         for column in self.grid:
             for cell in column:
-                if cell.cellType == currentCellType:
+                if cell.cellType in currentCellTypes:
                     surroundingTypeCount = 0
                     surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, rad)
                     for i in surroundingCells:
@@ -380,7 +412,10 @@ class CellGrid(Canvas):
         else:
             return FALSE
 
-    def createRiver(self, x , y, direction, distance):
+    def createRiver(self, x , y, direction, distance, counter):
+
+        if counter <= 0:
+            return
 
         # New coords for next line
 
@@ -489,10 +524,10 @@ class CellGrid(Canvas):
             if dirChooser == 1:
                 directionNew = (direction-1) % 8
 
-            self.createRiver(xNew , yNew, directionNew, distanceNew)
+            self.createRiver(xNew , yNew, directionNew, distanceNew,counter-1)
 
             if randint(0,100) > 70:  #fork
-                self.createRiver(xNew , yNew, directionNew, distanceNew)
+                self.createRiver(xNew , yNew, directionNew, distanceNew,counter-1)
 
     def draw(self):
         for column in self.grid:
@@ -500,9 +535,9 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 10
-numColumns = int(1890/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
-numRows = int(1000/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
+pixelsPerCell = 5
+numColumns = int(1280/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
+numRows = int(720/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
 
 if __name__ == "__main__" :
