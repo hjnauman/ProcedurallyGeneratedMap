@@ -13,13 +13,19 @@ class cellType(Enum):
     DEEP_WATER3 = 6
     SAND = 7
     RIVER_HEAD = 8
-    RIVER_WATER = 9
+    RIVER_WATER1 = 9
     LAND1 = 10
     LAND2 = 11
     LAND3 = 12
     LAND4 = 13
     LAND5 = 14
     RIVER_BANK = 15
+    RIVER_WATER2 = 16
+    RIVER_WATER3 = 17
+    TREE0 = 18
+    TOWN = 19
+    ROAD_DIRT = 20
+    BRIDGE_WOOD = 21
 
 class Biomes(Enum):
     PLAINS = 0
@@ -73,8 +79,13 @@ class Cell():
             color = 'tan'
         elif self.cellType == cellType.RIVER_HEAD:
             color = 'DodgerBlue4'
-        elif self.cellType == cellType.RIVER_WATER:
-            color = 'RoyalBlue4'
+        elif self.cellType == cellType.RIVER_WATER1:
+            color = '#0074D3' #'red' #'#0074D3'
+            # color = 'RoyalBlue4'
+        elif self.cellType == cellType.RIVER_WATER2:
+            color = '#0077E2'#'salmon' #'#0074D3'
+        elif self.cellType == cellType.RIVER_WATER3:
+            color = '#027EDE'#'light pink' #'#0074D3'
         elif self.cellType == cellType.LAND1:
             color = 'forest green'
         elif self.cellType == cellType.LAND2:
@@ -87,6 +98,14 @@ class Cell():
             color = '#AD9270'
         elif self.cellType == cellType.RIVER_BANK:
             color = 'chartreuse4'
+        elif self.cellType == cellType.TREE0:
+            color = 'dark green'
+        elif self.cellType == cellType.TOWN:
+            color = 'white'
+        elif self.cellType == cellType.ROAD_DIRT:
+            color = 'saddle brown'
+        elif self.cellType == cellType.BRIDGE_WOOD:
+            color = 'dark goldenrod'
 
         return color
 
@@ -102,6 +121,7 @@ class Cell():
 
             # self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = fill, outline = outline)
             self.master.create_rectangle(xmin, ymin, xmax, ymax, fill = color, width = 0)
+            #self.master.create_oval(xmin-10, ymin-10, xmax+10, ymax+10, fill = color, width = 0)
 
 class CellGrid(Canvas):
     def __init__(self,master, rowNumber, columnNumber, cellSize, infectionRate, Biome, *args, **kwargs):
@@ -119,6 +139,7 @@ class CellGrid(Canvas):
             self.grid.append(line)
 
         self.createWater(infectionRate)
+        self.createLandDiversity(infectionRate)
 
         self.draw()
 
@@ -185,13 +206,16 @@ class CellGrid(Canvas):
         # Generate sand on land that touches water
         self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.WATER,), cellType.SAND)
 
-        # Generate rivers
+        # Expand sand areas
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.SAND:
+                    if randint(0, 100) > 50:
+                        self.infectCells(10, cell.x, cell.y, cellType.SAND, (cellType.LAND,))
+                #    if randint(0, 10000) > 9900:
+                #        self.infectCells(30, cell.x, cell.y, cellType.SAND, (cellType.LAND,cellType.SAND))
 
-        # amountOfSand = 0
-        # for column in self.grid:
-        #     for cell in column:
-        #         if cell.cellType == cellType.SAND:
-        #             amountOfSand += 1
+        # Generate rivers
         for column in self.grid:
             for cell in column:
                 if cell.cellType == cellType.SAND:
@@ -203,32 +227,50 @@ class CellGrid(Canvas):
                             sandCount += 1
                         elif i.cellType == cellType.WATER:
                             waterCount += 1
-                    if sandCount < 4 and waterCount > 0 and randint(0,10000) > 9950:
+                    if sandCount < 4 and waterCount > 0 and randint(0,10000) > 9900:
                     #if randint(0,10000) > 9950:
                         cell.cellType = cellType.RIVER_HEAD
                         surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
                         direction = self.getDirection(surroundingCells, cell.x, cell.y)
-                        distance = randint(5,10)
-                        maxRiverLen = randint(5,10)
-                        self.createRiver(cell.x, cell.y, direction, distance, maxRiverLen)
+                        distance = randint(2,3)
+                        maxRiverLen = randint(20,40)
+                        self.createRiver(cell.x, cell.y, direction, distance, maxRiverLen,maxRiverLen,0)
 
         # Make rivers thick again
     #    for column in self.grid:
     #        for cell in column:
-    #            if cell.cellType == cellType.RIVER_WATER:
-    #                self.infectCells(10,cell.x,cell.y,cellType.RIVER_WATER,(cellType.LAND,))
+    #            if cell.cellType == cellType.RIVER_WATER1:
+    #                self.infectCells(10,cell.x,cell.y,cellType.RIVER_WATER1,(cellType.LAND,))
+
+        # Generate thicker rivers
+        self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER1,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
+
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.RIVER_BANK:
+                    cell.cellType = cellType.RIVER_WATER2
+
+        self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER2,), cellType.RIVER_BANK)
+
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.RIVER_BANK:
+                    cell.cellType = cellType.RIVER_WATER3
+
+        # Generate thicker rivers
+        #self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER2,), cellType.RIVER_BANK)
 
         # Generate banks around rivers
-        self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
+        self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER1,cellType.RIVER_WATER2,cellType.RIVER_WATER3,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
 
-        # Generate areas of differently-colored land -------------------------
-
+    def createLandDiversity(self, infectionRate):
+        # Generate areas of differently-colored land 
         #LAND1
         for column in self.grid:
             for cell in column:
                 if cell.cellType == cellType.LAND:
                     if randint(0, 10000) > 9950:
-                        self.cellType = cellType.LAND1
+                        cell.cellType = cellType.LAND1
                         self.infectCells(40, cell.x, cell.y, cellType.LAND1, (cellType.LAND,))
 
         #LAND2
@@ -236,15 +278,25 @@ class CellGrid(Canvas):
             for cell in column:
                 if cell.cellType == cellType.LAND or cell.cellType == cellType.LAND1:
                     if randint(0, 10000) > 9950:
-                        self.cellType = cellType.LAND2
+                        cell.cellType = cellType.LAND2
                         self.infectCells(30, cell.x, cell.y, cellType.LAND2, (cellType.LAND,cellType.LAND1))
+
+        #TREE0
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND or cell.cellType == cellType.LAND1 or cell.cellType == cellType.LAND2:
+                    if randint(0, 10000) > 9995:
+                        cell.cellType = cellType.TREE0
+                        self.infectCells(50, cell.x, cell.y, cellType.TREE0, (cellType.LAND,cellType.LAND1,cellType.LAND2,))
+
+        # --------------------------------------------------------------------
 
         #LAND3 (cliffs) (low spawn rate, but high infection rate)
         for column in self.grid:
             for cell in column:
                 if cell.cellType == cellType.LAND or cell.cellType == cellType.LAND1 or cell.cellType == cellType.LAND2:
                     if randint(0, 10000) > 9995:
-                        self.cellType = cellType.LAND3
+                        cell.cellType = cellType.LAND3
                         self.infectCells(50, cell.x, cell.y, cellType.LAND3, (cellType.LAND,cellType.LAND1,cellType.LAND2))
 
         # Generate specific land around cliffs
@@ -254,6 +306,7 @@ class CellGrid(Canvas):
         rad0 = 3
         self.generateCells(rad0, rad0*8, '=', (cellType.LAND3,), (cellType.LAND3,), cellType.LAND5)
 
+        # Generate small areas around peaks of LAND5
         for column in self.grid:
             for cell in column:
                 if cell.cellType == cellType.LAND5:
@@ -275,7 +328,7 @@ class CellGrid(Canvas):
             for cell in column:
                 if cell.cellType == cellType.LAND3:
                     if randint(0, 10000) > 9800:
-                        self.cellType = cellType.LAND5
+                        cell.cellType = cellType.LAND5
                         self.infectCells(40, cell.x, cell.y, cellType.LAND4, (cellType.LAND3,))
 #
     #    #LAND5 (cliffs, different color) (low spawn rate, but high infection rate)
@@ -283,12 +336,34 @@ class CellGrid(Canvas):
             for cell in column:
                 if cell.cellType == cellType.LAND4:
                     if randint(0, 10000) > 9800:
-                        self.cellType = cellType.LAND5
+                        cell.cellType = cellType.LAND5
                         self.infectCells(40, cell.x, cell.y, cellType.LAND5, (cellType.LAND4,))
 
+        #Choose settlement locations
 
-        # --------------------------------------------------------------------
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType in [cellType.LAND,cellType.LAND1,cellType.LAND2]:
+                    surroundingCells = self.getSurroundingCellsInfo(cell.x,cell.y,4)
+                    mountainCount = 0
+                    waterCount = 0
+                    for i in surroundingCells:
+                        if self.checkIfWater(i):
+                            waterCount += 1
+                        elif i.cellType in [cellType.LAND3,cellType.LAND4,cellType.LAND5]:
+                            mountainCount += 1
+                    if waterCount > 1 and waterCount < 15 and mountainCount == 0 and randint(0,10000) > 9980:
+                    #if randint(0,10000) > 9950:
+                        #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
+                        direction = randint(0,7)
+                        distance = randint(2,3)
+                        maxRoadLen = randint(10,20)
+                        self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make roads
+                        self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make roads
+                        cell.cellType = cellType.TOWN
 
+         # Generate land bits around roads
+        self.generateCells(1, 0, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TREE0), (cellType.ROAD_DIRT,), cellType.LAND1)
 
     def generateCells(self, rad, threshold, thresholdOperator, currentCellTypes, cellTypeConditional, newCellType):
         for column in self.grid:
@@ -387,7 +462,7 @@ class CellGrid(Canvas):
         waterCount = 0                                  # Find "center" of surrounding water tiles
         for cell in surroundingCellList:
             if cell.cellType == cellType.SAND:
-                cell.cellType = cellType.RIVER_WATER
+                cell.cellType = cellType.RIVER_WATER1
             if cell.cellType == cellType.WATER:
                 waterCount +=1
         waterIndex = math.ceil(waterCount/2)
@@ -399,7 +474,6 @@ class CellGrid(Canvas):
                 direction = (direction + 4) % 8         # Find opposite direction from chosen cell
                 return direction
 
-    #Christian is big boi
     def getDirectionCoordinates(self, direction):
         xOff = 0
         yOff = 0
@@ -434,13 +508,18 @@ class CellGrid(Canvas):
         return [xOff,yOff]
 
     def checkIfWater(self, cell):
-        if cell.cellType == cellType.WATER or cell.cellType == cellType.DEEP_WATER0 or cell.cellType == cellType.DEEP_WATER1 or cell.cellType == cellType.DEEP_WATER2 or cell.cellType == cellType.DEEP_WATER3:
+        if (
+            cell.cellType == cellType.WATER or cell.cellType == cellType.DEEP_WATER0
+        or cell.cellType == cellType.DEEP_WATER1 or cell.cellType == cellType.DEEP_WATER2
+        or cell.cellType == cellType.DEEP_WATER3 or cell.cellType == cellType.RIVER_WATER1
+        or cell.cellType == cellType.RIVER_WATER2 or cell.cellType == cellType.RIVER_WATER3
+        ):
             return TRUE
         else:
             return FALSE
 
-    def createRiver(self, x , y, direction, distance, counter):
-
+    def createRiver(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
+        
         if counter <= 0:
             return
 
@@ -453,84 +532,16 @@ class CellGrid(Canvas):
 
         for i in range(distance):
             if (
-    #            (direction == Directions.UP.value and y > 0)
-    #            or (direction == Directions.UP_RIGHT.value and x < numColumns - i and y > 0)
-    #            or (direction == Directions.RIGHT.value and x < numColumns - i)
-    #            or (direction == Directions.DOWN_RIGHT.value and x < numColumns - i and y < numRows - i)
-    #            or (direction == Directions.DOWN.value and y < numRows - i)
-    #            or (direction == Directions.DOWN_LEFT.value and x > 0 and y < numRows - i)
-    #            or (direction == Directions.LEFT.value and x > 0)
-    #            or (direction == Directions.UP_LEFT.value and x > 0 and y > 0)
-
-                (x+i*offsets[0]) in range(0, len(self.grid))
-                and (y+i*offsets[1]) in range(0, len(self.grid[0]))
+                (x+i*offsets[0]) in range(0, len(self.grid))  #checks to ensure x location writing to is within grid
+                and (y+i*offsets[1]) in range(0, len(self.grid[0]))  #checks to ensure y location writing to is within grid
             ):
                 if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-
-    #    if direction == Directions.UP.value:
-    #        for i in range(distance):
-    #            if y > 0:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    ##        xNew = x
-    # #       yNew = y-distance
-#
-    #    elif direction == Directions.UP_RIGHT.value:
-    #        for i in range(distance):
-    #            if x < numColumns - i and y > 0:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #  #      xNew = x+distance
-    #   #     yNew = y-distance
-#
-    #    elif direction == Directions.RIGHT.value:
-    #        for i in range(distance):
-    #            if x < numColumns - i:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    ##        xNew = x+distance
-    # #       yNew = y
-#
-    #    elif direction == Directions.DOWN_RIGHT.value:
-    #        for i in range(distance):
-    #            if x < numColumns - i and y < numRows - i:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #  #      xNew = x+distance
-    #   #     yNew = y+distance
-#
-    #    elif direction == Directions.DOWN.value:
-    #        for i in range(distance):
-    #            if y < numRows - i:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    ##        xNew = x
-    # #       yNew = y+distance
-#
-    #    elif direction == Directions.DOWN_LEFT.value:
-    #        for i in range(distance):
-    #            if x > 0 and y < numRows - i:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    #  #      xNew = x-distance
-    #   #     yNew = y+distance
-#
-    #    elif direction == Directions.LEFT.value:
-    #        for i in range(distance):
-    #            if x > 0:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-    ##        xNew = x-distance
-    # #       yNew = y
-#
-    #    elif direction == Directions.UP_LEFT.value:
-    #        for i in range(distance):
-    #            if x > 0 and y > 0:
-    #                if not self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
-    #                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER
-      #      xNew = x-distance
-       #     yNew = y-distance
+                    if counter > counterStart * (5/6):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER1
+                    elif counter > counterStart * (2/6):
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER2
+                    else:
+                        self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.RIVER_WATER3
 
         # Repeat with new line
 
@@ -542,19 +553,114 @@ class CellGrid(Canvas):
             if cell.cellType == cellType.WATER:
                 return
 
-        if randint(0,100) > 10:
-            distanceNew = randint(2,5)
-            dirChooser = randint(0,2)
+        #if randint(0,100) > 1:
+        distanceNew = randint(2,3)
+        dirChooser = randint(0,5)
 
+        if dirChooser not in [1,2]:
+            dirChooser = 0
+
+        directionNew = direction
+
+        if dirChooser == 1:
+            directionNew = (direction-1) % 8
+        elif dirChooser == 2:
             directionNew = (direction+1) % 8
 
-            if dirChooser == 1:
-                directionNew = (direction-1) % 8
+        if (dirChooser == lastDirChoice):
+            if randint(0, 100) < randint(50, 80):
+                directionNew = direction
 
-            self.createRiver(xNew , yNew, directionNew, distanceNew,counter-1)
 
-            if randint(0,100) > 70:  #fork
-                self.createRiver(xNew , yNew, directionNew, distanceNew,counter-1)
+        self.createRiver(xNew , yNew, directionNew, distanceNew, counter-1, counterStart, dirChooser)
+        
+        forkPercent = 0 # default
+
+        if counter > counterStart * (5/6):
+            forkPercent = randint(0, 8)
+        elif counter > counterStart * (2/6):
+            forkPercent = randint(0, 15)
+        else:
+            forkPercent = randint(0, 30)
+        
+        if randint(0,100) < forkPercent:  #fork
+            distanceNew2 = randint(2,5)
+            self.createRiver(xNew , yNew, directionNew, distanceNew2, counter-1, counterStart, dirChooser)
+
+    def createRoad(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
+        
+        if counter <= 0 and not self.checkIfWater(self.grid[x][y]):
+
+            if randint(0,100) < 50 and int(counterStart/2) > 5:
+                directionNew = randint(0,7)
+                distanceNew = randint(2,3)
+                self.createRoad(x, y, directionNew, distanceNew, int(counterStart/2),int(counterStart/2),0) # Make roads
+                self.createRoad(x, y, (directionNew+2)%8, distanceNew, int(counterStart/2),int(counterStart/2),0) # Make roads
+
+            self.grid[x][y].cellType = cellType.TOWN
+
+            return
+
+        # New coords for next line
+
+        offsets = self.getDirectionCoordinates(direction)
+
+        xNew = x+offsets[0]*distance
+        yNew = y+offsets[1]*distance
+
+        for i in range(distance):
+            if (
+                (x+i*offsets[0]) in range(0, len(self.grid))  #checks to ensure x location writing to is within grid
+                and (y+i*offsets[1]) in range(0, len(self.grid[0]))  #checks to ensure y location writing to is within grid
+            ):
+                if self.checkIfWater(self.grid[x+i*offsets[0]][y+i*offsets[1]]):
+                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.BRIDGE_WOOD # Bridge over water
+                else:
+                    self.grid[x+i*offsets[0]][y+i*offsets[1]].cellType = cellType.ROAD_DIRT # Land-based dirt road
+
+        # Repeat with new line
+
+        if not ((xNew) in range(0, len(self.grid)) and (yNew) in range(0, len(self.grid[0]))):
+            return
+
+        surroundingEndList = self.getSurroundingCellsInfo(xNew,yNew,1)
+        for cell in surroundingEndList:
+            if cell.cellType == cellType.WATER:
+                return
+
+        #if randint(0,100) > 1:
+        distanceNew = randint(2,3)
+        dirChooser = randint(0,5)
+
+        if dirChooser not in [1,2]:
+            dirChooser = 0
+
+        directionNew = direction
+
+        if dirChooser == 1:
+            directionNew = (direction-1) % 8
+        elif dirChooser == 2:
+            directionNew = (direction+1) % 8
+
+        if (dirChooser == lastDirChoice):
+            if randint(0, 100) < randint(10, 20):
+                directionNew = direction
+
+        self.createRoad(xNew , yNew, directionNew, distanceNew, counter-1, counterStart, dirChooser)
+        
+        forkPercent = 4 #0 # default
+
+    #    if counter > counterStart * (5/6):
+    #        forkPercent = randint(0, 8)
+    #    elif counter > counterStart * (2/6):
+    #        forkPercent = randint(0, 15)
+    #    else:
+    #        forkPercent = randint(0, 30)
+        
+        if randint(0,100) < forkPercent:  #fork
+            distanceNew2 = randint(2,5)
+            self.createRoad(xNew , yNew, directionNew, distanceNew2, counter-1, counterStart, dirChooser)
+
 
     def draw(self):
         for column in self.grid:
@@ -562,9 +668,9 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 5
-numColumns = int(1280/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
-numRows = int(720/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
+pixelsPerCell = 3
+numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
+numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
 
 if __name__ == "__main__" :
