@@ -26,6 +26,7 @@ class cellType(Enum):
     TOWN = 19
     ROAD_DIRT = 20
     BRIDGE_WOOD = 21
+    CONNECTED_TOWN = 22
 
 class Biomes(Enum):
     PLAINS = 0
@@ -101,7 +102,7 @@ class Cell():
         elif self.cellType == cellType.TREE0:
             color = 'dark green'
         elif self.cellType == cellType.TOWN:
-            color = 'white'
+            color = 'black'#'white'
         elif self.cellType == cellType.ROAD_DIRT:
             color = 'saddle brown'
         elif self.cellType == cellType.BRIDGE_WOOD:
@@ -257,11 +258,15 @@ class CellGrid(Canvas):
                 if cell.cellType == cellType.RIVER_BANK:
                     cell.cellType = cellType.RIVER_WATER3
 
-        # Generate thicker rivers
-        #self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER2,), cellType.RIVER_BANK)
-
         # Generate banks around rivers
         self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER1,cellType.RIVER_WATER2,cellType.RIVER_WATER3,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
+
+        #turn sand connected to river water into river water
+        self.generateCells(1, 0, '>', (cellType.SAND,), (cellType.RIVER_WATER1,cellType.RIVER_WATER2,cellType.RIVER_WATER3,cellType.RIVER_HEAD,), cellType.LAND1)
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType == cellType.LAND1:
+                    cell.cellType = cellType.RIVER_WATER3
 
     def createLandDiversity(self, infectionRate):
         # Generate areas of differently-colored land 
@@ -339,28 +344,34 @@ class CellGrid(Canvas):
                         cell.cellType = cellType.LAND5
                         self.infectCells(40, cell.x, cell.y, cellType.LAND5, (cellType.LAND4,))
 
-        #Choose settlement locations
-
-        for column in self.grid:
-            for cell in column:
-                if cell.cellType in [cellType.LAND,cellType.LAND1,cellType.LAND2]:
+        #Choose Town locations
+        maxTowns = 10
+        townList = []
+        while(maxTowns > 0):
+            #choose random cell
+            cell = self.grid[randint(0, len(self.grid)-1)][randint(0, len(self.grid[0])-1)]
+            if cell.cellType in [cellType.LAND,cellType.LAND1,cellType.LAND2]:
                     surroundingCells = self.getSurroundingCellsInfo(cell.x,cell.y,4)
-                    mountainCount = 0
+                    badCellCount = 0
                     waterCount = 0
                     for i in surroundingCells:
                         if self.checkIfWater(i):
                             waterCount += 1
-                        elif i.cellType in [cellType.LAND3,cellType.LAND4,cellType.LAND5]:
-                            mountainCount += 1
-                    if waterCount > 1 and waterCount < 15 and mountainCount == 0 and randint(0,10000) > 9980:
+                        elif i.cellType in [cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TOWN]:
+                            badCellCount += 1
+                    if waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
                     #if randint(0,10000) > 9950:
                         #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
                         direction = randint(0,7)
                         distance = randint(2,3)
                         maxRoadLen = randint(10,20)
-                        self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make roads
-                        self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make roads
+                        #self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make roads
+                        #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make roads
                         cell.cellType = cellType.TOWN
+                        townList.append(cell)
+                        maxTowns -= 1
+
+        self.connectTowns(townList)
 
          # Generate land bits around roads
         self.generateCells(1, 0, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TREE0), (cellType.ROAD_DIRT,), cellType.LAND1)
@@ -587,6 +598,51 @@ class CellGrid(Canvas):
             distanceNew2 = randint(2,5)
             self.createRiver(xNew , yNew, directionNew, distanceNew2, counter-1, counterStart, dirChooser)
 
+    def connectTowns(self, townList):
+        closestTowns = self.findClosestTowns(townList, townList)
+        print('please god work')
+        pass
+
+    def findClosestTowns(self, townList, originalTownList):
+        finalList = []
+        shortestDistanceList = []
+        connectedTown = []
+        for Town in townList:
+            lastDifference = 0
+            firstRound = True
+            closestTownIndex = -1
+            for secondTown in originalTownList:
+                if Town == secondTown:
+                    pass
+                else:
+                    difference = math.sqrt((Town.x-secondTown.x)**2 + (Town.y-secondTown.y)**2)
+                    if firstRound:
+                        firstRound = False
+                        lastDifference = difference
+                    elif difference < lastDifference:
+                        closestTownIndex = originalTownList.index(secondTown)
+                        lastDifference = difference
+            connectedTown = [Town, originalTownList[closestTownIndex]]
+            shortestDistanceList.append(connectedTown)
+
+        shortestDistanceListNoDuples = []
+        for i in shortestDistanceList:
+            if i not in shortestDistanceListNoDuples and [i[1],i[0]] not in shortestDistanceListNoDuples:
+                shortestDistanceListNoDuples.append(i)
+        
+        for i in shortestDistanceListNoDuples:
+            i[0].cellType = cellType.CONNECTED_TOWN
+        
+        unconnectedTowns = []
+        for town in originalTownList:
+            if town.cellType == cellType.TOWN:
+                unconnectedTowns.append(town)
+        #TODO FIX THIS SHIT SO ITS RECURSEIVE AND RETURNS A LIST OF ALL THE TOWNS WITH THEIR CLOSEST TOWN CONNECTION
+        while len(finalList) != 10:
+            finalList = self.findClosestTowns(unconnectedTowns, townList)
+
+        return finalList
+    
     def createRoad(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
         
         if counter <= 0 and not self.checkIfWater(self.grid[x][y]):
@@ -602,7 +658,6 @@ class CellGrid(Canvas):
             return
 
         # New coords for next line
-
         offsets = self.getDirectionCoordinates(direction)
 
         xNew = x+offsets[0]*distance
