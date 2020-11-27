@@ -3,6 +3,11 @@ from tkinter import *
 import math
 from enum import Enum
 
+from pathfinding.core.diagonal_movement import DiagonalMovement
+from pathfinding.core.grid import Grid
+from pathfinding.finder.a_star import AStarFinder
+
+
 class cellType(Enum):
     LAND = 0
     WATER_START = 1
@@ -350,7 +355,7 @@ class CellGrid(Canvas):
         townList = []
         while(maxTowns > 0):
             #choose random cell
-            cell = self.grid[randint(0, len(self.grid)-1)][randint(0, len(self.grid[0])-1)]
+            cell = self.grid[randint(2, len(self.grid)-3)][randint(2, len(self.grid[0])-3)] # Make towns, not at very edge of map
             if cell.cellType in [cellType.LAND,cellType.LAND1,cellType.LAND2]:
                     surroundingCells = self.getSurroundingCellsInfo(cell.x,cell.y,4)
                     badCellCount = 0
@@ -360,7 +365,7 @@ class CellGrid(Canvas):
                             waterCount += 1
                         elif i.cellType in [cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TOWN]:
                             badCellCount += 1
-                    if waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
+                    if badCellCount == 0:#waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
                     #if randint(0,10000) > 9950:
                         #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
                         #direction = randint(0,7)
@@ -375,6 +380,16 @@ class CellGrid(Canvas):
         # Connect towns
 
         self.closestTownList = self.connectTowns(townList)
+
+        # TEST: Connect towns using roads with pathfinding method "pathfinder"
+        #for combo in self.closestTownList:
+        combo = self.closestTownList[0]
+        pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y, [], Directions.UP)
+        x1 = combo[0].x
+        y1 = combo[0].y
+        for coords in pathList:
+            if [coords[0],coords[1]] not in [[combo[0].x, combo[0].y,],[combo[1].x, combo[1].y,]]:
+                self.grid[coords[0]][coords[1]].cellType = cellType.ROAD_DIRT
 
          # Create "border" cells around towns
 
@@ -654,8 +669,91 @@ class CellGrid(Canvas):
             for combo in self.findClosestTowns(unconnectedTowns, townList):
                 shortestDistanceListNoDuples.append(combo)
 
+    #    # TEST: Connect towns that only have one connection
+    #    singleConnectionTowns = []
+#
+    #    if townList == originalTownList: # If first call
+    #        for town in townList:
+    #            totConnections = 0
+    #            for combo in shortestDistanceListNoDuples:
+    #                if town in [combo[0], combo[1]]:
+    #                    totConnections += 1
+    #            if totConnections == 0:
+    #                singleConnectionTowns.append(town)
+    #                print(town)
+    #            
+    #    for combo in self.findClosestTowns(singleConnectionTowns, singleConnectionTowns):
+    #            shortestDistanceListNoDuples.append(combo)
+
         return shortestDistanceListNoDuples
     
+    def pathfinder(self, x0, y0, x1, y1, directionList, direction):
+
+        print(x0,y0,x1,y1)
+
+        # Generate pathfinding grid
+        matrix = []
+
+        for column in self.grid:
+            line = []
+            for cell in column:
+                if cell.cellType in [cellType.LAND3,]:
+                    matIn = 0 # obstacles
+                elif self.checkIfWater(cell) or cell.cellType in [cellType.SAND,cellType.RIVER_BANK,]:
+                    matIn = 5 #water, only cross this if necessary
+                elif cell.cellType in [cellType.ROAD_DIRT,]:
+                    matIn = 1 #use existing roads when possible
+                #elif cell.x < 1 or cell.x > (len(self.grid)-2) or column < 1 or column > (len(self.grid[0])-2):
+                    #matIn = 0 #obstacles at edges of map to prevent drawing roads out-of-grid
+                else:
+                    matIn = 2 #free spaces
+                line.append(1)#matIn
+            matrix.append(line)
+
+        print(len(matrix), len(matrix[0]), len(self.grid), len(self.grid[0]))
+
+        pathGrid = Grid(matrix=matrix)
+
+        # TODO: Find a path
+        start = pathGrid.node(x0,y0)
+        end = pathGrid.node(x1,y1)
+        finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, pathGrid)
+
+        print(pathGrid.grid_str(path=path, start=start, end=end))
+
+        # Return the path
+        return path
+
+        # OLD: Testing Hunter's algorithm idea
+
+#        directionList.append([x0,y0])
+#        if (x0 == x1 and y0 == y1) or (len(directionList) > 20):
+#            return directionList
+#        else:
+#            # Create lists of moves
+#            directionListUp = self.pathfinder(x0, y0 - 1, x1, y1, directionList, Directions.UP)
+#            directionListRight = self.pathfinder(x0 + 1, y0, x1, y1, directionList, Directions.RIGHT)
+#            directionListDown = self.pathfinder(x0, y0 - 1, x1, y1, directionList, Directions.DOWN)
+#            directionListLeft = self.pathfinder(x0 - 1, y0, x1, y1, directionList, Directions.LEFT)
+#
+#            shortestList = []
+#            shortestDistance = 0
+#            firstRun = True
+#            for dirList in [directionListUp,directionListRight,directionListDown,directionListLeft]:
+#                if firstRun:
+#                    shortestList = dirList
+#                    shortestDistance = len(dirList)
+#                    firstRun = False
+#                elif len(dirList) < shortestDistance:
+#                    shortestDistance = len(dirList)
+#                    shortestList = dirList
+
+            # Now shortestList is the list with the shortest path that reaches the desired coordinate
+            #directionList.append(shortestList)
+
+#            return directionList
+
     def createRoad(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
         
         if counter <= 0 and not self.checkIfWater(self.grid[x][y]):
@@ -744,15 +842,16 @@ class CellGrid(Canvas):
 
 
 
-pixelsPerCell = 6
+pixelsPerCell = 15
 numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
+grid = []
 
-# Test to generate new maps; doesn't work since it doesn't modify the old grid or pass the new grid out, gotta figure it out
-def key(event):
-    if event.char in ['r','R']:
-        print('Generating new map')
+# Test to regen map with a button; doesn't work since it doesn't modify the old grid or pass the new grid out, gotta figure it out
+#def regenGrid(app, grid):
+        #print('Generating new map')
+        #grid.pack_forget()
         #grid.remove()
         #grid = []
         #grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
@@ -762,8 +861,10 @@ if __name__ == "__main__" :
     app = Tk()
 
     grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
+    #b = Button(app, text="Regenerate", command = regenGrid(app,grid))
+    #b.pack()
     grid.pack()
 
-    app.bind_all('<Key>', key)
+    #app.bind_all('<Key>', key)
 
     app.mainloop()
