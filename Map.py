@@ -382,14 +382,14 @@ class CellGrid(Canvas):
         self.closestTownList = self.connectTowns(townList)
 
         # TEST: Connect towns using roads with pathfinding method "pathfinder"
-        #for combo in self.closestTownList:
-        combo = self.closestTownList[0]
-        pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y, [], Directions.UP)
-        x1 = combo[0].x
-        y1 = combo[0].y
-        for coords in pathList:
-            if [coords[0],coords[1]] not in [[combo[0].x, combo[0].y,],[combo[1].x, combo[1].y,]]:
-                self.grid[coords[0]][coords[1]].cellType = cellType.ROAD_DIRT
+        for combo in self.closestTownList:
+        #combo = self.closestTownList[0]
+            pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y, [], Directions.UP)
+            x1 = combo[0].x
+            y1 = combo[0].y
+            for coords in pathList:
+                if [coords[0],coords[1]] not in [[combo[0].x, combo[0].y,],[combo[1].x, combo[1].y,]]:
+                    self.grid[coords[0]][coords[1]].cellType = cellType.ROAD_DIRT
 
          # Create "border" cells around towns
 
@@ -691,13 +691,14 @@ class CellGrid(Canvas):
 
         print(x0,y0,x1,y1)
 
-        # Generate pathfinding grid
-        matrix = []
+        # Generate pathfinding grid; TODO: THIS MATRIX MIGHT BE GENERATING ONLY THE LEFT HALF? NOT SURE.
+        #matrix = []
+
+        matrix = [ [0]*len(self.grid) for i in range(len(self.grid))]
 
         for column in self.grid:
-            line = []
             for cell in column:
-                if cell.cellType in [cellType.LAND3,]:
+                if cell.cellType in [cellType.LAND3,cellType.LAND4,cellType.LAND5,]:
                     matIn = 0 # obstacles
                 elif self.checkIfWater(cell) or cell.cellType in [cellType.SAND,cellType.RIVER_BANK,]:
                     matIn = 5 #water, only cross this if necessary
@@ -707,10 +708,11 @@ class CellGrid(Canvas):
                     #matIn = 0 #obstacles at edges of map to prevent drawing roads out-of-grid
                 else:
                     matIn = 2 #free spaces
-                line.append(1)#matIn
-            matrix.append(line)
+                matrix[cell.y][cell.x] = matIn
 
-        print(len(matrix), len(matrix[0]), len(self.grid), len(self.grid[0]))
+    #    print(matrix)
+
+        #print(len(matrix), len(matrix[0]), len(self.grid), len(self.grid[0]))
 
         pathGrid = Grid(matrix=matrix)
 
@@ -720,7 +722,7 @@ class CellGrid(Canvas):
         finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
         path, runs = finder.find_path(start, end, pathGrid)
 
-        print(pathGrid.grid_str(path=path, start=start, end=end))
+        #print(pathGrid.grid_str(path=path, start=start, end=end))
 
         # Return the path
         return path
@@ -842,7 +844,7 @@ class CellGrid(Canvas):
 
 
 
-pixelsPerCell = 15
+pixelsPerCell = 10
 numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
