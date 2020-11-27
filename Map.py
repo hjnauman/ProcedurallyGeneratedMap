@@ -98,7 +98,7 @@ class Cell():
         elif self.cellType == cellType.LAND5:
             color = '#AD9270'
         elif self.cellType == cellType.RIVER_BANK:
-            color = 'chartreuse4'
+            color = '#346B23'#'chartreuse4'
         elif self.cellType == cellType.TREE0:
             color = 'dark green'
         elif self.cellType == cellType.TOWN:
@@ -365,13 +365,21 @@ class CellGrid(Canvas):
                         direction = randint(0,7)
                         distance = randint(2,3)
                         maxRoadLen = randint(10,20)
-                        #self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make roads
-                        #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make roads
+                        self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make road
+                        self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
                         cell.cellType = cellType.TOWN
                         townList.append(cell)
                         maxTowns -= 1
 
         self.connectTowns(townList)
+
+         # Create "border" cells around towns
+
+        for column in self.grid:
+            for cell in column:
+                if cell.cellType in [cellType.TOWN,cellType.CONNECTED_TOWN]:
+                    for adjacentCell in self.getSurroundingCellsInfo(cell.x,cell.y,1):
+                        adjacentCell.cellType = cellType.ROAD_DIRT
 
          # Generate land bits around roads
         self.generateCells(1, 0, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TREE0), (cellType.ROAD_DIRT,), cellType.LAND1)
@@ -599,7 +607,7 @@ class CellGrid(Canvas):
             self.createRiver(xNew , yNew, directionNew, distanceNew2, counter-1, counterStart, dirChooser)
 
     def connectTowns(self, townList):
-        closestTowns = self.findClosestTowns(townList, townList)
+        #closestTowns = self.findClosestTowns(townList, townList)
         print('please god work')
         pass
 
@@ -723,13 +731,23 @@ class CellGrid(Canvas):
                 cell.draw()
 
 
-pixelsPerCell = 3
+pixelsPerCell = 4
 numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
 
+#def key(event):
+#    if event.char in ['r','R']:
+#        print('Generating new map')
+#        grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
+
+
+
+
 if __name__ == "__main__" :
     app = Tk()
+
+    #app.bind_all('<Key>', key)
 
     grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
     grid.pack()
