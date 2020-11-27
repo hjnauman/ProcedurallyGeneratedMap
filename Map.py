@@ -142,6 +142,8 @@ class CellGrid(Canvas):
         self.createWater(infectionRate)
         self.createLandDiversity(infectionRate)
 
+        self.closestTownList = []
+
         self.draw()
 
 
@@ -362,16 +364,18 @@ class CellGrid(Canvas):
                     if waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
                     #if randint(0,10000) > 9950:
                         #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
-                        direction = randint(0,7)
-                        distance = randint(2,3)
-                        maxRoadLen = randint(10,20)
-                        self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make road
-                        self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
+                        #direction = randint(0,7)
+                        #distance = randint(2,3)
+                        #maxRoadLen = randint(10,20)
+                        #self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make road
+                        #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
                         cell.cellType = cellType.TOWN
                         townList.append(cell)
                         maxTowns -= 1
 
-        self.connectTowns(townList)
+        # Connect towns
+
+        self.closestTownList = self.connectTowns(townList)
 
          # Create "border" cells around towns
 
@@ -607,12 +611,12 @@ class CellGrid(Canvas):
             self.createRiver(xNew , yNew, directionNew, distanceNew2, counter-1, counterStart, dirChooser)
 
     def connectTowns(self, townList):
-        #closestTowns = self.findClosestTowns(townList, townList)
-        print('please god work')
-        pass
+        closestTowns = self.findClosestTowns(townList, townList)
+        print('finished finding closest towns!')
+        return closestTowns
 
     def findClosestTowns(self, townList, originalTownList):
-        finalList = []
+        #finalList = []
         shortestDistanceList = []
         connectedTown = []
         for Town in townList:
@@ -645,11 +649,13 @@ class CellGrid(Canvas):
         for town in originalTownList:
             if town.cellType == cellType.TOWN:
                 unconnectedTowns.append(town)
-        #TODO FIX THIS SHIT SO ITS RECURSEIVE AND RETURNS A LIST OF ALL THE TOWNS WITH THEIR CLOSEST TOWN CONNECTION
-        while len(finalList) != 10:
-            finalList = self.findClosestTowns(unconnectedTowns, townList)
 
-        return finalList
+        #TODO FIX THIS SHIT SO ITS RECURSEIVE AND RETURNS A LIST OF ALL THE TOWNS WITH THEIR CLOSEST TOWN CONNECTION
+        if len(shortestDistanceListNoDuples) < len(townList):
+            for combo in self.findClosestTowns(unconnectedTowns, townList):
+                shortestDistanceListNoDuples.append(combo)
+
+        return shortestDistanceListNoDuples
     
     def createRoad(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
         
@@ -729,9 +735,14 @@ class CellGrid(Canvas):
         for column in self.grid:
             for cell in column:
                 cell.draw()
+        for townCombo in self.closestTownList:
+            print(townCombo[0].x,townCombo[0].y,townCombo[1].x,townCombo[1].y,)
+            self.master.create_line(townCombo[0].x,townCombo[0].y,townCombo[1].x,townCombo[1].y,)
+            
 
 
-pixelsPerCell = 4
+
+pixelsPerCell = 6
 numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
