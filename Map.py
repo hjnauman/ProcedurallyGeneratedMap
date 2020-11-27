@@ -131,6 +131,7 @@ class CellGrid(Canvas):
         self.cellSize = cellSize
         self.Biome = Biome
         self.grid = []
+        self.closestTownList = []
         for column in range(columnNumber):
 
             line = []
@@ -141,8 +142,6 @@ class CellGrid(Canvas):
 
         self.createWater(infectionRate)
         self.createLandDiversity(infectionRate)
-
-        self.closestTownList = []
 
         self.draw()
 
@@ -736,8 +735,11 @@ class CellGrid(Canvas):
             for cell in column:
                 cell.draw()
         for townCombo in self.closestTownList:
-            print(townCombo[0].x,townCombo[0].y,townCombo[1].x,townCombo[1].y,)
-            self.master.create_line(townCombo[0].x,townCombo[0].y,townCombo[1].x,townCombo[1].y,)
+        #print(townCombo[0].x,townCombo[0].y,townCombo[1].x,townCombo[1].y,)
+            self.create_line(townCombo[0].x*pixelsPerCell+int(pixelsPerCell/2),
+            townCombo[0].y*pixelsPerCell+int(pixelsPerCell/2),
+            townCombo[1].x*pixelsPerCell+int(pixelsPerCell/2),
+            townCombo[1].y*pixelsPerCell+int(pixelsPerCell/2),)
             
 
 
@@ -747,20 +749,21 @@ numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to t
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 infectionRate = randint(90, 100)
 
-#def key(event):
-#    if event.char in ['r','R']:
-#        print('Generating new map')
-#        grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
-
-
-
+# Test to generate new maps; doesn't work since it doesn't modify the old grid or pass the new grid out, gotta figure it out
+def key(event):
+    if event.char in ['r','R']:
+        print('Generating new map')
+        #grid.remove()
+        #grid = []
+        #grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
+        #grid.pack()
 
 if __name__ == "__main__" :
     app = Tk()
 
-    #app.bind_all('<Key>', key)
-
     grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
     grid.pack()
+
+    app.bind_all('<Key>', key)
 
     app.mainloop()
