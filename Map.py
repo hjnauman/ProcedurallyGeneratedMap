@@ -32,6 +32,13 @@ class cellType(Enum):
     ROAD_DIRT = 20
     BRIDGE_WOOD = 21
     CONNECTED_TOWN = 22
+    LAND_DESERT0 = 23
+    LAND_DESERT1 = 24
+    LAND_DESERT2 = 25
+    LAND_SNOW0 = 26
+    LAND_SNOW1 = 27
+    LAND_SNOW2 = 28
+
 
 class Biomes(Enum):
     PLAINS = 0
@@ -845,7 +852,7 @@ class CellGrid(Canvas):
 
 
 
-pixelsPerCell = 4
+pixelsPerCell = 5
 numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
 maxTowns = 15
@@ -854,18 +861,16 @@ grid = []
 
 # Test to regen map with a button; doesn't work since it doesn't modify the old grid or pass the new grid out, gotta figure it out
 #def regenGrid(app, grid):
-        #print('Generating new map')
-        #grid.pack_forget()
-        #grid.remove()
-        #grid = []
-        #grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
-        #grid.pack()
+#    print('Generating new map')
+#    app.destroy(grid)
+#    grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
+#    app.pack(grid)
 
 if __name__ == "__main__" :
     app = Tk()
 
     grid = CellGrid(app, numRows, numColumns, pixelsPerCell, infectionRate, Biomes.PLAINS)
-    #b = Button(app, text="Regenerate", command = regenGrid(app,grid))
+    #b = Button(app, text="Regenerate", command=lambda : regenGrid(app,grid))
     #b.pack()
     grid.pack()
 
