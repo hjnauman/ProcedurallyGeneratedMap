@@ -351,9 +351,9 @@ class CellGrid(Canvas):
                         self.infectCells(40, cell.x, cell.y, cellType.LAND5, (cellType.LAND4,))
 
         #Choose Town locations
-        maxTowns = 10
+        numTowns = 0
         townList = []
-        while(maxTowns > 0):
+        while(numTowns < maxTowns):
             #choose random cell
             cell = self.grid[randint(2, len(self.grid)-3)][randint(2, len(self.grid[0])-3)] # Make towns, not at very edge of map
             if cell.cellType in [cellType.LAND,cellType.LAND1,cellType.LAND2]:
@@ -375,21 +375,23 @@ class CellGrid(Canvas):
                         #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
                         cell.cellType = cellType.TOWN
                         townList.append(cell)
-                        maxTowns -= 1
+                        numTowns += 1
 
-        # Connect towns
+        # Choose towns to connect
 
         self.closestTownList = self.connectTowns(townList)
 
-        # TEST: Connect towns using roads with pathfinding method "pathfinder"
+        # Connect towns using roads with A* pathfinding method
         for combo in self.closestTownList:
-        #combo = self.closestTownList[0]
             pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y, [], Directions.UP)
             x1 = combo[0].x
             y1 = combo[0].y
             for coords in pathList:
                 if [coords[0],coords[1]] not in [[combo[0].x, combo[0].y,],[combo[1].x, combo[1].y,]]:
-                    self.grid[coords[0]][coords[1]].cellType = cellType.ROAD_DIRT
+                    if self.checkIfWater(self.grid[coords[0]][coords[1]]):
+                        self.grid[coords[0]][coords[1]].cellType = cellType.BRIDGE_WOOD # make bridges over water
+                    else:
+                        self.grid[coords[0]][coords[1]].cellType = cellType.ROAD_DIRT # make roads over everything else (for now)
 
          # Create "border" cells around towns
 
@@ -626,7 +628,7 @@ class CellGrid(Canvas):
 
     def connectTowns(self, townList):
         closestTowns = self.findClosestTowns(townList, townList)
-        print('finished finding closest towns!')
+        #print('finished finding closest towns!')
         return closestTowns
 
     def findClosestTowns(self, townList, originalTownList):
@@ -689,7 +691,7 @@ class CellGrid(Canvas):
     
     def pathfinder(self, x0, y0, x1, y1, directionList, direction):
 
-        print(x0,y0,x1,y1)
+        #print(x0,y0,x1,y1)
 
         # Generate pathfinding grid; TODO: THIS MATRIX MIGHT BE GENERATING ONLY THE LEFT HALF? NOT SURE.
         #matrix = []
@@ -834,19 +836,19 @@ class CellGrid(Canvas):
         for column in self.grid:
             for cell in column:
                 cell.draw()
-        for townCombo in self.closestTownList:
-        #print(townCombo[0].x,townCombo[0].y,townCombo[1].x,townCombo[1].y,)
-            self.create_line(townCombo[0].x*pixelsPerCell+int(pixelsPerCell/2),
-            townCombo[0].y*pixelsPerCell+int(pixelsPerCell/2),
-            townCombo[1].x*pixelsPerCell+int(pixelsPerCell/2),
-            townCombo[1].y*pixelsPerCell+int(pixelsPerCell/2),)
+    #    for townCombo in self.closestTownList: # Draw lines between connected towns
+    #        self.create_line(townCombo[0].x*pixelsPerCell+int(pixelsPerCell/2),
+    #        townCombo[0].y*pixelsPerCell+int(pixelsPerCell/2),
+    #        townCombo[1].x*pixelsPerCell+int(pixelsPerCell/2),
+    #        townCombo[1].y*pixelsPerCell+int(pixelsPerCell/2),)
             
 
 
 
-pixelsPerCell = 10
+pixelsPerCell = 4
 numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
+maxTowns = 15
 infectionRate = randint(90, 100)
 grid = []
 
