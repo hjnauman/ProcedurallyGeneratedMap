@@ -372,14 +372,34 @@ class CellGrid(Canvas):
                             waterCount += 1
                         elif i.cellType in [cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TOWN]:
                             badCellCount += 1
-                    if badCellCount == 0:#waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
-                    #if randint(0,10000) > 9950:
-                        #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
-                        #direction = randint(0,7)
-                        #distance = randint(2,3)
-                        #maxRoadLen = randint(10,20)
-                        #self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make road
-                        #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
+
+                    if badCellCount != 0:
+                        pass
+                    
+                    # Find distances between towns and make sure they spawn at least "townMinDistance" cells apart
+                    lastDifference = 0
+                    firstRound = True
+                    for existingTown in townList:
+                        if cell == existingTown:
+                            pass
+                        else:
+                            difference = math.sqrt((cell.x-existingTown.x)**2 + (cell.y-existingTown.y)**2)
+                            if firstRound:
+                                firstRound = False
+                                lastDifference = difference
+                                print(lastDifference)
+                            elif difference < lastDifference:
+                                lastDifference = difference
+
+                    # Check if making first town, or if town distance is far enough away from existing towns
+                    if (len(townList) == 0) or (lastDifference > townMinDistance):#waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
+                #if randint(0,10000) > 9950:
+                    #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
+                    #direction = randint(0,7)
+                    #distance = randint(2,3)
+                    #maxRoadLen = randint(10,20)
+                    #self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make road
+                    #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
                         cell.cellType = cellType.TOWN
                         townList.append(cell)
                         numTowns += 1
@@ -850,12 +870,14 @@ class CellGrid(Canvas):
     #        townCombo[1].y*pixelsPerCell+int(pixelsPerCell/2),)
             
 
+sizeH = 1000#750 #1400
+sizeV = 750
 
-
-pixelsPerCell = 5
-numColumns = int(1400/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
-numRows = int(750/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
-maxTowns = 15
+pixelsPerCell = 6
+numColumns = int(sizeH/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
+numRows = int(sizeV/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
+maxTowns = 8#15
+townMinDistance = 20#10
 infectionRate = randint(90, 100)
 grid = []
 
