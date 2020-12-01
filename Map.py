@@ -226,8 +226,6 @@ class CellGrid(Canvas):
                 if cell.cellType == cellType.SAND:
                     if randint(0, 100) > 50:
                         self.infectCells(10, cell.x, cell.y, cellType.SAND, (cellType.LAND,))
-                #    if randint(0, 10000) > 9900:
-                #        self.infectCells(30, cell.x, cell.y, cellType.SAND, (cellType.LAND,cellType.SAND))
 
         # Generate rivers
         for column in self.grid:
@@ -249,12 +247,6 @@ class CellGrid(Canvas):
                         distance = randint(2,3)
                         maxRiverLen = randint(20,40)
                         self.createRiver(cell.x, cell.y, direction, distance, maxRiverLen,maxRiverLen,0)
-
-        # Make rivers thick again
-    #    for column in self.grid:
-    #        for cell in column:
-    #            if cell.cellType == cellType.RIVER_WATER1:
-    #                self.infectCells(10,cell.x,cell.y,cellType.RIVER_WATER1,(cellType.LAND,))
 
         # Generate thicker rivers
         self.generateCells(1, 0, '>', (cellType.LAND,), (cellType.RIVER_WATER1,cellType.RIVER_HEAD,), cellType.RIVER_BANK)
@@ -331,14 +323,6 @@ class CellGrid(Canvas):
                     #if randint(0, 10000) > 9500:
                     self.infectCells(10, cell.x, cell.y, cellType.LAND5, (cellType.LAND3,))
 
-        #LAND4 (cliffs, higher elevation)
-    #    rad0 = 1
-    #    self.generateCells(rad0, rad0*8, '=', (cellType.LAND3,), (cellType.LAND3,cellType.LAND4,), cellType.LAND4)
-
-        #LAND5 (cliffs, even higher elevation)
-    #    rad0 = 2
-    #    self.generateCells(rad0, rad0*8, '=', (cellType.LAND4,), (cellType.LAND4,cellType.LAND5), cellType.LAND5)
-
         # Fill in single-cells of land between cliffs
         self.generateCells(1, 4, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,), (cellType.LAND3,), cellType.LAND3)
 #
@@ -391,14 +375,7 @@ class CellGrid(Canvas):
                                 lastDifference = difference
 
                     # Check if making first town, or if town distance is far enough away from existing towns
-                    if (len(townList) == 0) or (lastDifference > townMinDistance):#waterCount > 1 and waterCount < 15 and badCellCount == 0: #and randint(0,10000) > 9980:
-                #if randint(0,10000) > 9950:
-                    #surroundingCells = self.getSurroundingCellsInfo(cell.x, cell.y, 1)
-                    #direction = randint(0,7)
-                    #distance = randint(2,3)
-                    #maxRoadLen = randint(10,20)
-                    #self.createRoad(cell.x, cell.y, direction, distance, maxRoadLen,maxRoadLen,0) # Make road
-                    #self.createRoad(cell.x, cell.y, (direction+4)%8, distance, maxRoadLen,maxRoadLen,0) # Make another road in opposite direction
+                    if (len(townList) == 0) or (lastDifference > townMinDistance):
                         cell.cellType = cellType.TOWN
                         townList.append(cell)
                         numTowns += 1
@@ -654,11 +631,9 @@ class CellGrid(Canvas):
 
     def connectTowns(self, townList):
         closestTowns = self.findClosestTowns(townList, townList)
-        #print('finished finding closest towns!')
         return closestTowns
 
     def findClosestTowns(self, townList, originalTownList):
-        #finalList = []
         shortestDistanceList = []
         connectedTown = []
         for Town in townList:
@@ -692,7 +667,7 @@ class CellGrid(Canvas):
             if town.cellType == cellType.TOWN:
                 unconnectedTowns.append(town)
 
-        #TODO FIX THIS SHIT SO ITS RECURSEIVE AND RETURNS A LIST OF ALL THE TOWNS WITH THEIR CLOSEST TOWN CONNECTION
+        #Connect any towns that have no connections to nearest town
         if len(shortestDistanceListNoDuples) < len(townList):
             for combo in self.findClosestTowns(unconnectedTowns, townList):
                 shortestDistanceListNoDuples.append(combo)
@@ -715,12 +690,9 @@ class CellGrid(Canvas):
 
         return shortestDistanceListNoDuples
     
-    def pathfinder(self, x0, y0, x1, y1, directionList, direction):
+    def pathfinder(self, x0, y0, x1, y1):
 
-        #print(x0,y0,x1,y1)
-
-        # Generate pathfinding grid; TODO: THIS MATRIX MIGHT BE GENERATING ONLY THE LEFT HALF? NOT SURE.
-        #matrix = []
+        # Generate pathfinding grid
 
         matrix = [ [0]*len(self.grid) for i in range(len(self.grid))]
 
@@ -732,57 +704,20 @@ class CellGrid(Canvas):
                     matIn = 5 #water, only cross this if necessary
                 elif cell.cellType in [cellType.ROAD_DIRT,]:
                     matIn = 1 #use existing roads when possible
-                #elif cell.x < 1 or cell.x > (len(self.grid)-2) or column < 1 or column > (len(self.grid[0])-2):
-                    #matIn = 0 #obstacles at edges of map to prevent drawing roads out-of-grid
                 else:
                     matIn = 2 #free spaces
                 matrix[cell.y][cell.x] = matIn
 
-    #    print(matrix)
-
-        #print(len(matrix), len(matrix[0]), len(self.grid), len(self.grid[0]))
-
         pathGrid = Grid(matrix=matrix)
 
-        # TODO: Find a path
+        # Find a path
         start = pathGrid.node(x0,y0)
         end = pathGrid.node(x1,y1)
         finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
         path, runs = finder.find_path(start, end, pathGrid)
 
-        #print(pathGrid.grid_str(path=path, start=start, end=end))
-
         # Return the path
         return path
-
-        # OLD: Testing Hunter's algorithm idea
-
-#        directionList.append([x0,y0])
-#        if (x0 == x1 and y0 == y1) or (len(directionList) > 20):
-#            return directionList
-#        else:
-#            # Create lists of moves
-#            directionListUp = self.pathfinder(x0, y0 - 1, x1, y1, directionList, Directions.UP)
-#            directionListRight = self.pathfinder(x0 + 1, y0, x1, y1, directionList, Directions.RIGHT)
-#            directionListDown = self.pathfinder(x0, y0 - 1, x1, y1, directionList, Directions.DOWN)
-#            directionListLeft = self.pathfinder(x0 - 1, y0, x1, y1, directionList, Directions.LEFT)
-#
-#            shortestList = []
-#            shortestDistance = 0
-#            firstRun = True
-#            for dirList in [directionListUp,directionListRight,directionListDown,directionListLeft]:
-#                if firstRun:
-#                    shortestList = dirList
-#                    shortestDistance = len(dirList)
-#                    firstRun = False
-#                elif len(dirList) < shortestDistance:
-#                    shortestDistance = len(dirList)
-#                    shortestList = dirList
-
-            # Now shortestList is the list with the shortest path that reaches the desired coordinate
-            #directionList.append(shortestList)
-
-#            return directionList
 
     def createRoad(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
         
@@ -845,13 +780,6 @@ class CellGrid(Canvas):
         self.createRoad(xNew , yNew, directionNew, distanceNew, counter-1, counterStart, dirChooser)
         
         forkPercent = 4 #0 # default
-
-    #    if counter > counterStart * (5/6):
-    #        forkPercent = randint(0, 8)
-    #    elif counter > counterStart * (2/6):
-    #        forkPercent = randint(0, 15)
-    #    else:
-    #        forkPercent = randint(0, 30)
         
         if randint(0,100) < forkPercent:  #fork
             distanceNew2 = randint(2,5)
@@ -872,10 +800,10 @@ class CellGrid(Canvas):
 sizeH = 1000#750 #1400
 sizeV = 750
 
-pixelsPerCell = 6
+pixelsPerCell = 4
 numColumns = int(sizeH/pixelsPerCell) #Number of Columns directly coorelates to the x position of the grid
 numRows = int(sizeV/pixelsPerCell) #Number of Columns directly coorelates to the y position of the grid
-maxTowns = 8#15
+maxTowns = 10#15
 townMinDistance = 20#10
 infectionRate = randint(90, 100)
 grid = []
