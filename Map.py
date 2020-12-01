@@ -387,7 +387,6 @@ class CellGrid(Canvas):
                             if firstRound:
                                 firstRound = False
                                 lastDifference = difference
-                                print(lastDifference)
                             elif difference < lastDifference:
                                 lastDifference = difference
 
