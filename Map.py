@@ -71,7 +71,11 @@ class Cell():
         self.cellType= cellType
 
     def getCellColor(self):
-
+        """
+        Description
+        -----------
+        Get cell color from cellType
+        """
         color = 'white' # default color
 
         if self.cellType == cellType.LAND:
@@ -123,7 +127,11 @@ class Cell():
         return color
 
     def draw(self):
-        """ order to the cell to draw its representation on the canvas """
+        """
+        Description
+        -----------
+        Draw current cell to the window
+        """
         if self.master != None :
             xmin = self.x * self.size
             xmax = xmin + self.size
@@ -183,7 +191,11 @@ class CellGrid(Canvas):
         """
         Description
         -------------
-        Create an infection of water cells from water start cells. Fill in small land islands.
+        Generate water bodies (lakes, oceans) using infectCells; generate rivers from water bodies
+
+        Params
+        --------
+        infectionRate - int
         """
         # Create water infection from water start cells
         for column in self.grid:
@@ -274,6 +286,15 @@ class CellGrid(Canvas):
                     cell.cellType = cellType.RIVER_WATER3
 
     def createLandDiversity(self, infectionRate):
+        """
+        Description
+        -----------
+        Generate areas of different land types, mountains, and towns
+        
+        Params
+        --------
+        infectionRate - int
+        """
         # Generate areas of differently-colored land 
         #LAND1
         for column in self.grid:
@@ -386,7 +407,7 @@ class CellGrid(Canvas):
 
         # Connect towns using roads with A* pathfinding method
         for combo in self.closestTownList:
-            pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y, [], Directions.UP)
+            pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y)
             x1 = combo[0].x
             y1 = combo[0].y
             for coords in pathList:
@@ -408,6 +429,21 @@ class CellGrid(Canvas):
         self.generateCells(1, 0, '>', (cellType.LAND,cellType.LAND1,cellType.LAND2,cellType.LAND3,cellType.LAND4,cellType.LAND5,cellType.TREE0), (cellType.ROAD_DIRT,), cellType.LAND1)
 
     def generateCells(self, rad, threshold, thresholdOperator, currentCellTypes, cellTypeConditional, newCellType):
+        """
+        Description
+        -------------
+        Check for cells within a specific set of cellTypes, and if a specific conditional operator is true, then convert current cell(s) into another specific cellType.
+
+        Params
+        --------
+        rad - An int, radius to search in for cells of cellTypeConditional
+        threshold - An int, number of cells to find for the operator to return true
+        thresholdOperator - '>', '<', or '='; operator to check using the threshold value
+        currentCellTypes - tuple of cellType(s) to use as center of radius, and which will be converted into newCellType if operator is true
+        cellTypeConditional - tuple of cellType(s) to check for in the radius; counted fot the operator check
+        newCellType - cellType to convert cells of currentCellType to if they pass the operator check
+
+        """
         for column in self.grid:
             for cell in column:
                 if cell.cellType in currentCellTypes:
@@ -501,6 +537,17 @@ class CellGrid(Canvas):
         return surroundingCellList # returns a list of the surrounding cells' cellTypes
     
     def getDirection(self, surroundingCellList, x, y):
+        """
+        Description
+        -----------
+        From an input cell, find nearby water cells and find a direction that faces away from them the most. Returns a direction (enum).
+        
+        Params
+        --------
+        surroundingCellList - list of cells; intended to be the list of cells surrounding the current cell as found using getSurroundingCellsInfo
+        x - x coordinate of the infecting cell
+        y - y coordinate of the infecting cell
+        """
         waterCount = 0                                  # Find "center" of surrounding water tiles
         for cell in surroundingCellList:
             if cell.cellType == cellType.SAND:
@@ -517,31 +564,42 @@ class CellGrid(Canvas):
                 return direction
 
     def getDirectionCoordinates(self, direction):
+        """
+        Description
+        -----------
+        From an input direction, find offsets for x and y and return them as a 1D list
+        
+        Params
+        --------
+        direction - direction (enum) to check; intended to be between 0 and 7
+        """
         xOff = 0
         yOff = 0
 
-        if direction == Directions.UP.value:
+        direction2 = direction%8
+
+        if direction2 == Directions.UP.value:
             xOff = 0
             yOff = -1
-        elif direction == Directions.UP_RIGHT.value:
+        elif direction2 == Directions.UP_RIGHT.value:
             xOff = 1
             yOff = -1
-        elif direction == Directions.RIGHT.value:
+        elif direction2 == Directions.RIGHT.value:
             xOff = 1
             yOff = 0
-        elif direction == Directions.DOWN_RIGHT.value:
+        elif direction2 == Directions.DOWN_RIGHT.value:
             xOff = 1
             yOff = 1
-        elif direction == Directions.DOWN.value:
+        elif direction2 == Directions.DOWN.value:
             xOff = 0
             yOff = 1
-        elif direction == Directions.DOWN_LEFT.value:
+        elif direction2 == Directions.DOWN_LEFT.value:
             xOff = -1
             yOff = 1
-        elif direction == Directions.LEFT.value:
+        elif direction2 == Directions.LEFT.value:
             xOff = -1
             yOff = 0
-        elif direction == Directions.UP_LEFT.value:
+        elif direction2 == Directions.UP_LEFT.value:
             xOff = -1
             yOff = -1
 
@@ -550,6 +608,15 @@ class CellGrid(Canvas):
         return [xOff,yOff]
 
     def checkIfWater(self, cell):
+        """
+        Description
+        -----------
+        From an input cell, check if it is considered water.
+        
+        Params
+        --------
+        cell - input cell
+        """
         if (
             cell.cellType == cellType.WATER or cell.cellType == cellType.DEEP_WATER0
         or cell.cellType == cellType.DEEP_WATER1 or cell.cellType == cellType.DEEP_WATER2
@@ -561,7 +628,22 @@ class CellGrid(Canvas):
             return FALSE
 
     def createRiver(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
+        """
+        Description
+        -----------
+        Generate a river line from a given start point; generate different sizes based on current length of river.
         
+        Params
+        --------
+        x - int, starting x coordinate
+        y - int, starting y coordinate
+        direction - current direction
+        distance - distance for this line
+        counter - int, counts down with recursive calls to limit river length
+        counterStart - int, starting value of counter; set both counter and counterStart to same value when calling in generation
+        lastDirChoice - int used to limit direction changes that would cause rivers to loop in on themselves too often; use 0 when calling in generation
+        """
+
         if counter <= 0:
             return
 
@@ -630,10 +712,29 @@ class CellGrid(Canvas):
             self.createRiver(xNew , yNew, directionNew, distanceNew2, counter-1, counterStart, dirChooser)
 
     def connectTowns(self, townList):
+        """
+        Description
+        -----------
+        Returns a list containing town pairs to connect together.
+        
+        Params
+        --------
+        townList - list of cells of cellType cellType.TOWN
+        """
         closestTowns = self.findClosestTowns(townList, townList)
         return closestTowns
 
     def findClosestTowns(self, townList, originalTownList):
+        """
+        Description
+        -----------
+        Finds closest towns for each town in townList and returns a list of town combinations without duplicates
+        
+        Params
+        --------
+        townList - list of cells of cellType cellType.TOWN (changes during recursive calls)
+        originalTownList - list of cells of cellType cellType.TOWN (doesn't change)
+        """
         shortestDistanceList = []
         connectedTown = []
         for Town in townList:
@@ -691,7 +792,16 @@ class CellGrid(Canvas):
         return shortestDistanceListNoDuples
     
     def pathfinder(self, x0, y0, x1, y1):
-
+        """
+        Description
+        -----------
+        Finds a path between two points and returns a list of coordinates along the path
+        Currently only checks for road-compatible paths by avoiding mountains and going on land when possible
+        
+        Params
+        --------
+        x0,y0,x1,y1 - coordinates for two points to connect
+        """
         # Generate pathfinding grid
 
         matrix = [ [0]*len(self.grid) for i in range(len(self.grid))]
@@ -720,6 +830,21 @@ class CellGrid(Canvas):
         return path
 
     def createRoad(self, x , y, direction, distance, counter, counterStart, lastDirChoice):
+        """
+        Description
+        -----------
+        Generate a road line from a given start point
+        
+        Params
+        --------
+        x - int, starting x coordinate
+        y - int, starting y coordinate
+        direction - current direction
+        distance - distance for this line
+        counter - int, counts down with recursive calls to limit river length
+        counterStart - int, starting value of counter; set both counter and counterStart to same value when calling in generation
+        lastDirChoice - int used to limit direction changes that would cause rivers to loop in on themselves too often; use 0 when calling in generation
+        """
         
         if counter <= 0 and not self.checkIfWater(self.grid[x][y]):
 
@@ -787,6 +912,12 @@ class CellGrid(Canvas):
 
 
     def draw(self):
+        """
+        Description
+        -----------
+        Draw the grid to the window
+
+        """
         for column in self.grid:
             for cell in column:
                 cell.draw()
