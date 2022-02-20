@@ -141,10 +141,10 @@ class CellGrid(Canvas):
                             waterCount += 1
                     if sandCount < 4 and waterCount > 0 and randint(0, 10000) > 9900:
                         cell.cell_type = CellTypes.RIVER_HEAD
-                        direction = self.getDirection(surroundingCells, cell.x, cell.y)
+                        direction = self.get_direction(surroundingCells, cell.x, cell.y)
                         distance = randint(2, 3)
                         maxRiverLen = randint(20, 40)
-                        self.createRiver(cell.x, cell.y, direction, distance, maxRiverLen, maxRiverLen, 0)
+                        self.create_river(cell.x, cell.y, direction, distance, maxRiverLen, maxRiverLen, 0)
 
         # Generate thicker rivers
         self.generate_cells(1, 0, '>', [CellTypes.LAND], [CellTypes.RIVER_WATER1, CellTypes.RIVER_HEAD], CellTypes.RIVER_BANK)
@@ -287,11 +287,11 @@ class CellGrid(Canvas):
                     num_towns += 1
 
         # Choose towns to connect
-        self.closesttown_list = self.connectTowns(town_list)
+        self.closesttown_list = self.connect_towns(town_list)
 
         # Connect towns using roads with A* pathfinding method
         for combo in self.closesttown_list:
-            pathList = self.pathfinder(combo[0].x, combo[0].y, combo[1].x, combo[1].y)
+            pathList = self.path_finder(combo[0].x, combo[0].y, combo[1].x, combo[1].y)
             for coords in pathList:
                 if [coords[0], coords[1]] not in [[combo[0].x, combo[0].y, ], [combo[1].x, combo[1].y, ]]:
                     if self.check_if_water(self.grid[coords[0]][coords[1]]):
@@ -449,7 +449,7 @@ class CellGrid(Canvas):
 
         return surroundingCellList  # returns a list of the surrounding cells' CellTypess
 
-    def getDirection(self, surroundingCellList, x, y):
+    def get_direction(self, surroundingCellList, x, y):
         """
         Description
         -----------
@@ -476,7 +476,7 @@ class CellGrid(Canvas):
                 direction = (direction + 4) % 8         # Find opposite direction from chosen cell
                 return direction
 
-    def getDirectionCoordinates(self, direction):
+    def get_directionCoordinates(self, direction):
         """
         Description
         -----------
@@ -532,7 +532,7 @@ class CellGrid(Canvas):
         """
         return cell.cell_type in water_cells
 
-    def createRiver(self, x, y, direction, distance, counter, counterStart, lastDirChoice):
+    def create_river(self, x, y, direction, distance, counter, counterStart, lastDirChoice):
         """
         Description
         -----------
@@ -553,7 +553,7 @@ class CellGrid(Canvas):
 
         # New coords for next line
 
-        offsets = self.getDirectionCoordinates(direction)
+        offsets = self.get_directionCoordinates(direction)
 
         xNew = x + offsets[0] * distance
         yNew = y + offsets[1] * distance
@@ -599,7 +599,7 @@ class CellGrid(Canvas):
             if randint(0, 100) < randint(50, 80):
                 directionNew = direction
 
-        self.createRiver(xNew, yNew, directionNew, distanceNew, counter - 1, counterStart, dirChooser)
+        self.create_river(xNew, yNew, directionNew, distanceNew, counter - 1, counterStart, dirChooser)
 
         forkPercent = 0  # default
 
@@ -612,9 +612,9 @@ class CellGrid(Canvas):
 
         if randint(0, 100) < forkPercent:  # fork
             distanceNew2 = randint(2, 5)
-            self.createRiver(xNew, yNew, directionNew, distanceNew2, counter - 1, counterStart, dirChooser)
+            self.create_river(xNew, yNew, directionNew, distanceNew2, counter - 1, counterStart, dirChooser)
 
-    def connectTowns(self, town_list):
+    def connect_towns(self, town_list):
         """
         Description
         -----------
@@ -624,10 +624,10 @@ class CellGrid(Canvas):
         --------
         town_list - list of cells of CellTypes CellTypes.TOWN
         """
-        closestTowns = self.findClosestTowns(town_list, town_list)
+        closestTowns = self.find_closest_towns(town_list, town_list)
         return closestTowns
 
-    def findClosestTowns(self, town_list, originaltown_list):
+    def find_closest_towns(self, town_list, originaltown_list):
         """
         Description
         -----------
@@ -673,7 +673,7 @@ class CellGrid(Canvas):
 
         # Connect any towns that have no connections to nearest town
         if len(shortestDistanceListNoDuples) < len(town_list):
-            for combo in self.findClosestTowns(unconnectedTowns, town_list):
+            for combo in self.find_closest_towns(unconnectedTowns, town_list):
                 shortestDistanceListNoDuples.append(combo)
 
     #    # TEST: Connect towns that only have one connection
@@ -689,12 +689,12 @@ class CellGrid(Canvas):
     #                singleConnectionTowns.append(town)
     #                print(town)
     #
-    #    for combo in self.findClosestTowns(singleConnectionTowns, singleConnectionTowns):
+    #    for combo in self.find_closest_towns(singleConnectionTowns, singleConnectionTowns):
     #            shortestDistanceListNoDuples.append(combo)
 
         return shortestDistanceListNoDuples
 
-    def pathfinder(self, x0, y0, x1, y1):
+    def path_finder(self, x0, y0, x1, y1):
         """
         Description
         -----------
@@ -732,7 +732,7 @@ class CellGrid(Canvas):
         # Return the path
         return path
 
-    def createRoad(self, x, y, direction, distance, counter, counterStart, lastDirChoice):
+    def create_road(self, x, y, direction, distance, counter, counterStart, lastDirChoice):
         """
         Description
         -----------
@@ -754,15 +754,15 @@ class CellGrid(Canvas):
             if randint(0, 100) < 50 and int(counterStart / 2) > 5:
                 directionNew = randint(0, 7)
                 distanceNew = randint(2, 3)
-                self.createRoad(x, y, directionNew, distanceNew, int(counterStart / 2), int(counterStart / 2), 0)  # Make roads
-                self.createRoad(x, y, (directionNew + 2) % 8, distanceNew, int(counterStart / 2), int(counterStart / 2), 0)  # Make roads
+                self.create_road(x, y, directionNew, distanceNew, int(counterStart / 2), int(counterStart / 2), 0)  # Make roads
+                self.create_road(x, y, (directionNew + 2) % 8, distanceNew, int(counterStart / 2), int(counterStart / 2), 0)  # Make roads
 
             self.grid[x][y].cell_type = CellTypes.TOWN
 
             return
 
         # New coords for next line
-        offsets = self.getDirectionCoordinates(direction)
+        offsets = self.get_directionCoordinates(direction)
 
         xNew = x + offsets[0] * distance
         yNew = y + offsets[1] * distance
@@ -804,13 +804,13 @@ class CellGrid(Canvas):
             if randint(0, 100) < randint(10, 20):
                 directionNew = direction
 
-        self.createRoad(xNew, yNew, directionNew, distanceNew, counter - 1, counterStart, dirChooser)
+        self.create_road(xNew, yNew, directionNew, distanceNew, counter - 1, counterStart, dirChooser)
 
         forkPercent = 4  # 0 # default
 
         if randint(0, 100) < forkPercent:
             distanceNew2 = randint(2, 5)
-            self.createRoad(xNew, yNew, directionNew, distanceNew2, counter - 1, counterStart, dirChooser)
+            self.create_road(xNew, yNew, directionNew, distanceNew2, counter - 1, counterStart, dirChooser)
 
     def draw(self):
         """
