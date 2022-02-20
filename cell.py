@@ -18,70 +18,70 @@ class Cell():
         # Default color
         color = 'white'
 
-        if self.cell_type == CellTypes.LAND:
+        if self.cell_type == CellTypes.land.value.LAND_0:
             color = 'green'
 
-        elif self.cell_type == CellTypes.WATER:
+        elif self.cell_type == CellTypes.water.value.WATER_0:
             color = '#0074D3'
 
-        elif self.cell_type == CellTypes.WATER_START:
+        elif self.cell_type == CellTypes.water_generation.value.WATER_START:
             color = 'black'
 
-        elif self.cell_type == CellTypes.DEEP_WATER0:
+        elif self.cell_type == CellTypes.water.value.DEEP_WATER_0:
             color = '#0B62E6'
 
-        elif self.cell_type == CellTypes.DEEP_WATER1:
+        elif self.cell_type == CellTypes.water.value.DEEP_WATER_1:
             color = '#2059DA'
 
-        elif self.cell_type == CellTypes.DEEP_WATER2:
+        elif self.cell_type == CellTypes.water.value.DEEP_WATER_2:
             color = '#2855B7'
 
-        elif self.cell_type == CellTypes.DEEP_WATER3:
+        elif self.cell_type == CellTypes.water.value.DEEP_WATER_3:
             color = '#2E519B'
 
-        elif self.cell_type == CellTypes.SAND:
+        elif self.cell_type == CellTypes.land.value.SAND_0:
             color = 'tan'
 
-        elif self.cell_type == CellTypes.RIVER_HEAD:
+        elif self.cell_type == CellTypes.water_generation.value.RIVER_HEAD:
             color = 'DodgerBlue4'
 
-        elif self.cell_type == CellTypes.RIVER_WATER1:
+        elif self.cell_type == CellTypes.water.value.RIVER_WATER_0:
             color = '#0074D3'  # '#0074D3' 'red' '#0074D3'
 
-        elif self.cell_type == CellTypes.RIVER_WATER2:
+        elif self.cell_type == CellTypes.water.value.RIVER_WATER_1:
             color = '#0077E2'  # '#0077E2' 'salmon' '#0074D3'
 
-        elif self.cell_type == CellTypes.RIVER_WATER3:
+        elif self.cell_type == CellTypes.water.value.RIVER_WATER_2:
             color = '#027EDE'  # '#027EDE' 'light pink' '#0074D3'
 
-        elif self.cell_type == CellTypes.LAND1:
+        elif self.cell_type == CellTypes.land.value.LAND_1:
             color = 'forest green'
 
-        elif self.cell_type == CellTypes.LAND2:
+        elif self.cell_type == CellTypes.land.value.LAND_2:
             color = 'olive drab'
 
-        elif self.cell_type == CellTypes.LAND3:
+        elif self.cell_type == CellTypes.land.value.LAND_3:
             color = 'burlywood4'
 
-        elif self.cell_type == CellTypes.LAND4:
+        elif self.cell_type == CellTypes.land.value.LAND_4:
             color = '#9E805B'
 
-        elif self.cell_type == CellTypes.LAND5:
+        elif self.cell_type == CellTypes.land.value.LAND_5:
             color = '#AD9270'
 
-        elif self.cell_type == CellTypes.RIVER_BANK:
+        elif self.cell_type == CellTypes.land.value.RIVER_BANK:
             color = '#346B23'  # 'chartreuse4'
 
-        elif self.cell_type == CellTypes.TREE0:
+        elif self.cell_type == CellTypes.plant.value.TREE_0:
             color = 'dark green'
 
-        elif self.cell_type == CellTypes.TOWN:
+        elif self.cell_type == CellTypes.town.value.TOWN:
             color = 'black'
 
-        elif self.cell_type == CellTypes.ROAD_DIRT:
+        elif self.cell_type == CellTypes.road.value.ROAD_DIRT:
             color = 'saddle brown'
 
-        elif self.cell_type == CellTypes.BRIDGE_WOOD:
+        elif self.cell_type == CellTypes.road.value.BRIDGE_WOOD:
             color = 'dark goldenrod'
 
         return color
@@ -101,5 +101,11 @@ class Cell():
             color = self.getCellColor()
 
             # self.master.create_rectangle(x_min, y_min, x_max, y_max, fill = fill, outline = outline)
+            # if self.x % 2 == 0:
             self.master.create_rectangle(x_min, y_min, x_max, y_max, fill=color, width=0)
-            # self.master.create_oval(x_min-10, y_min-10, x_max+10, y_max+10, fill = color, width = 0)
+            # else:
+            #    self.master.create_rectangle(x_min, y_min + self.size/2, x_max, y_max + self.size/2, fill=color, width=0)
+            # if self.x % 2 == 0:
+            #     self.master.create_oval(x_min - 20, y_min - 20, x_max + 20, y_max + 20, fill=color, width=0)
+            # else:
+            #     self.master.create_oval(x_min - 20, y_min - 30, x_max + 20, y_max - 10, fill=color, width=0)
